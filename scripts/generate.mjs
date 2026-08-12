@@ -88,8 +88,26 @@ function extractTag(xml, tag) {
 }
 
 // ---- Extract Clean Text ---------------------------------------------------
+function asciify(text) {
+  // Convert Unicode punctuation and special characters to ASCII equivalents
+  return text
+    .replace(/\u2018|\u2019|\u201A|\u2032/g, "'")
+    .replace(/\u201C|\u201D|\u201E|\u2033/g, '"')
+    .replace(/\u2014|\u2015/g, '---')
+    .replace(/\u2013|\u2012/g, '--')
+    .replace(/\u2026/g, '...')
+    .replace(/\u00A0/g, ' ')
+    .replace(/\u00AD/g, '')
+    .replace(/\u200B/g, '')
+    .replace(/[\u0080-\u00FF]/g, function(c) {
+      // Latin-1 supplement: try to keep basic chars
+      return c;
+    })
+    .replace(/[\u0100-\uFFFF]/g, '');
+}
+
 function stripHtml(html) {
-  return html
+  return asciify(html
     .replace(/<[^>]+>/g, ' ')
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
@@ -105,7 +123,7 @@ function stripHtml(html) {
     .replace(/&nbsp;/g, ' ')
     .replace(/&#(\d+);/g, function(_, d) { return String.fromCharCode(parseInt(d, 10)); })
     .replace(/\s+/g, ' ')
-    .trim();
+    .trim());
 }
 
 function extractExcerpt(text, maxWords) {
