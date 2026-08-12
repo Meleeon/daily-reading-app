@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Daily Reading</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="data.js"></script>
 <style>
 :root {
   --bg: #faf8f5;
@@ -282,27 +283,16 @@ async function fetchPassages() {
     }
   }
 
-  // Fallback: local JSON
-  try {
-    const resp = await fetch('passages-data.json');
-    if (resp.ok) {
-      const text = await resp.text();
-      if (text.trim().length > 0) {
-        const data = JSON.parse(text);
-        if (data && data.length > 0) {
-          dbPassages = data.map(p => ({...p}));
-          updateDbStatus(true);
-          console.log('Loaded ' + data.length + ' passages from local data');
-          return;
-        }
-      }
-    }
-  } catch (e) {
-    console.warn('Local data load failed:', e.message);
+  // Fallback: embedded data (always available, no fetch needed)
+  if (window.__PASSAGES__ && window.__PASSAGES__.length > 0) {
+    dbPassages = window.__PASSAGES__.map(p => ({...p}));
+    updateDbStatus(true);
+    console.log('Loaded ' + dbPassages.length + ' passages from embedded data');
+    return;
   }
 
   updateDbStatus(false);
-  console.log('Using fallback passages');
+  console.log('No data available, using fallback');
 }
 
 function allPassages() {
