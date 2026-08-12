@@ -36,6 +36,6 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git add passages-data.json
+          git add passages-data.json data.js
           git commit -m "Update passages data [skip ci]" || true
           git push
