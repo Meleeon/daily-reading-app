@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Daily Reading</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="data.js"></script>
 <style>
 :root {
   --bg: #faf8f5;
@@ -220,84 +218,51 @@ body {
 </div>
 
 <script>
-// ==================== CONFIG ====================
-const SUPABASE_URL = 'https://pdrtmmyqzoqnzlzywcia.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBkcnRtbXlxem9xbnpsenl3Y2lhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0Mzc0ODYsImV4cCI6MjEwMjAxMzQ4Nn0.F805AyjUEBx_nBE2QFL5JZvtpxAVkO7nTwZqvdC7zVg';
-
-// ==================== FALLBACK PASSAGES ====================
-const FALLBACK_PASSAGES = [
+// ==================== EMBEDDED PASSAGES ====================
+const DB_PASSAGES = [
   {
-    id: 1, title: "The Vertical City and Its Discontents", created_at: "2026-01-01T00:00:00Z",
-    en: "The skyscraper, that quintessential emblem of twentieth-century ambition, has undergone a profound ontological shift in the first decades of the twenty-first. No longer merely an extrapolation of capitalist exuberance -- a phallic extrusion of steel and glass thrust skyward in defiance of gravity -- the contemporary tower aspires to a more nuanced synthesis of ecological stewardship, social porosity, and formal experimentation. Yet this aspiration is frequently thwarted by the intractable realities of speculative development: the exigencies of the pro forma, the tyranny of the floor plate, and the relentless optimization of net-to-gross ratios conspire to produce a generic verticality that belies its architects' loftier pretensions. Consider the recent proliferation of mixed-use supertalls across Southeast Asian metropolises. These towers, ostensibly conceived as self-contained urban ecosystems, often devolve into stratified enclaves where the public realm is reduced to a simulacrum of urbanity -- a manicured podium garden accessible only to residents, a sky lobby whose breathtaking panorama is contingent upon a keycard. The architectural avant-garde has responded with a repertoire of formal strategies intended to subvert this hermetic verticality. Rotated floor plates, interlocking volumes, and skybridges that weave between adjacent towers gesture toward a porosity that the programmatic logic of the building ultimately resists.",
-    source: "Keller Easterling, \"Extrastatecraft: The Power of Infrastructure Space\" (Verso, 2014)",
-    tags: ["architecture","urbanism","skyscraper"], difficulty: "advanced", word_count: 385
+    id: 1, title: "America's Care Economy Is Broken", created_at: "2026-08-12T01:50:00Z",
+    en: "From childcare to elder care to teaching, the labor that sustains society goes undercompensated. A nationalized care economy would change that. In America, tens of millions of people provide essential care for others, day in and day out, often without anything near adequate recognition or compensation. They are the parents caring for kids and the children caring for their elderly parents and relatives with disabilities \"for free.\" They are the underpaid legions of teachers, cleaners, nannies, home aides, social workers, midwives, doulas, and hospice volunteers. Without them, life as we know it would grind to a halt. Together, these groups comprise a vast network of support systems, staffed almost exclusively by women, known as the \"care economy.\" This economy supplies and maintains the workforce that employers desperately depend on. But due to a long history of disparities, their wages (and, as a result, the country's GDP) fail to reflect the true value of the care they provide. One might even say that their labor has been effectively donated to the broader American economy -- often at great cost to the caregivers themselves. In recent years, caregivers, unions, activists, scholars, and politicians on the left have advocated that this labor force be recognized and more appropriately compensated for their work. The likelihood of that happening in the U.S. has been minuscule for most of the country's history, largely because women had few other options. But several ongoing demographic and economic shifts make it more necessary now: declining birth rates and more paid work options for women (reducing the supply of unpaid caretakers) and expanded longevity (increasing the demand for caretaking, as well as other services). These shifts in basic life patterns are fueling a bottleneck that alters the clout that all workers now wield. These shifts require commensurate changes in our social and economic systems. Their occurrence together has created an unprecedented opportunity to discard decrepit systems and embrace innovation. Disgust with the recent evidence of corruption among those in power and their failure to support basic services for Americans may hasten that embrace. Developing a nationalized care infrastructure to supply key elements of the care work now provided at home or not at all would have many positive effects for individuals and the economy. They include ensuring all Americans get the care they need, freeing up current unpaid caregivers to work for pay if they would like, raising the wages of current paid care workers, and documenting the heretofore unbooked value of care work on the ledger of human production.",
+    source: "Elizabeth Gregory, \"The Real Domestic Product\" (MIT Press, 2026). Adapted at The MIT Press Reader. https://thereader.mitpress.mit.edu/americas-care-economy-is-broken/",
+    tags: ["economics","society","care","policy"], difficulty: "advanced", word_count: 399
+  },
+  {
+    id: 2, title: "Everyday Technology Is Becoming a Black Box. Is There a Cost?", created_at: "2026-08-12T01:52:00Z",
+    en: "It is difficult to overstate how profoundly humanity has been influenced by the transmission and accumulation of knowledge. But we can begin to appreciate this when we consider cases of individuals attempting to create everyday artifacts \"from scratch.\" If divisions of cognitive labor are powerful engines of technological growth, what happens to humans when those divisions no longer exist? This scenario has been repeatedly depicted in novels where a person travels back in time to an earlier era. In Mark Twain's \"A Connecticut Yankee in King Arthur's Court,\" for example, a mechanic named Hank, who works in a 19th-century arms factory in Connecticut, is transported into the Arthurian era -- specifically, 528 AD. He goes on to easily create devices from his era, such as modern guns and bicycles. Likewise, in Leo Frankowski's \"Conrad Stargard\" novels, a Polish army engineer is transported back to 1231 AD in Poland and soon helps accelerate his country's technology to safeguard it from a Mongol invasion. Inspiring and enjoyable as Twain's and Frankowski's tales may be, they both present highly unrealistic visions of what solo experts could actually achieve in earlier eras. If you want a more accurate picture, one might find it in Thomas Thwaites's 2011 book \"The Toaster Project: Or a Heroic Attempt to Build a Simple Electric Appliance from Scratch.\" In it, Thwaites, a British designer, recounts his attempt to build a working toaster from raw materials found in the wild. This is no easy feat. Many parts of the toaster are made of metal. To procure those metals, Thwaites returns to the original natural deposits in the Earth's crust. This initial step alone soon overwhelms him as a solo agent. He must consult with experts who tell him which locations on Earth contain likely metal veins that could be extracted and refined. Without that help, he would have wandered aimlessly through the countryside, sifting through soil and rocks that contained none or only scant traces of the required copper, iron, and nickel. Thwaites eventually builds a furnace that produces a product resembling usable iron after many trial-and-error attempts. But the product isn't of sufficient quality, and Thwaites resorts to a microwave-powered furnace. Just to get to the point of having workable iron, Thwaites resorts to many shortcuts, with the help of experts and modern-day devices.",
+    source: "Frank C. Keil, \"The Disappearance of Insight\" (MIT Press, 2026). Adapted at The MIT Press Reader. https://thereader.mitpress.mit.edu/everyday-technology-is-becoming-a-black-box-is-there-a-cost/",
+    tags: ["technology","psychology","society","education"], difficulty: "advanced", word_count: 407
+  },
+  {
+    id: 3, title: "Jules Verne's Empty Dream of Spaceflight", created_at: "2026-08-12T02:03:00Z",
+    en: "About halfway through \"From the Earth to the Moon\" -- which is to say, still firmly on Earth -- Jules Verne tells us that in a time when a 30-mile-per-hour train is considered speedy, the public finds it \"natural\" to launch a projectile to the moon. Granted, this is in contrast to the newer idea of putting a person inside that projectile, but even that, a few pages later, is described as something that would happen \"sooner or later.\" Natural is an interesting word to describe an endeavor that requires digging an enormous hole on a hill in uncultivated land in Florida, mining and melting a bunch of aluminum, and pouring it in -- not to mention then setting a formal table to eat a multicourse meal at the bottom of it. But leaving that implication of human depredations aside for the moment, the suggestion of inevitability -- the \"because it's there\" school of lunar landings -- also serves as a reminder that no one has really given any reason for launching this incredible enterprise. Over the course of 200 pages, describing extreme efforts of engineering, mining, astronomy, and fundraising, no clear rationale is given for traveling to the moon. In the book, Impey Barbicane, the redoubtable ballistics expert who comes up with the idea, asks, \"What for?\" about decorating the capsule's exterior, demonstrating how rational and unartistic he is. But he never asks the same question about the voyage itself. In his inspiring oration, which ignites national and eventually global enthusiasm for the endeavor, he says only that no one has done it before, that despite all the accumulated knowledge about the moon, \"no one has ever established direct communication with her,\" a statement that provokes \"involuntary expressions of surprise.\" The embodiment of rationalism is seemingly conducting a major endeavor without a reason. In fact, however, the reason is already implied in his statement, so obvious to everyone that he doesn't need to say anything more. For him and for his listeners, the possibility of doing it and doing it first is enough. Verne gives his story an international varnish, with funding and scientific contributions from across Europe, Latin America, and parts of Asia. But he also repeatedly emphasizes the supposed national character of the Americans that allows them to conceive, execute, and lead the effort: \"the inventive genius of the Americans\"; \"the practical genius of the American\"; \"the daring American genius.\" It is the same belief in inherent superiority that was used to justify colonialism, given a pretense of rationality rather than religion.",
+    source: "Malka Older, in annotated edition of Jules Verne's \"From Earth to the Moon\" (MIT Press, 2026). The MIT Press Reader. https://thereader.mitpress.mit.edu/jules-vernes-empty-dream-of-spaceflight/",
+    tags: ["literature","science","space","history"], difficulty: "advanced", word_count: 406
+  },
+  {
+    id: 4, title: "The Lost Civic Life of Movie Rental Stores", created_at: "2026-08-12T02:13:00Z",
+    en: "If a DVD owner from the year 2005 found herself transported back to a video store circa 1982, she would likely find the space remarkably familiar: videocassette cases lining the walls, a movie playing on a television set, maybe some marquee lights framing an announcement board over the checkout counter -- all in all, not terribly unlike the video store of two and a half decades later. However, understanding the video store simply as a transactional space in which money is exchanged for goods and services misses the forest for the trees. That same time-traveling video renter might find herself startled by the employee offering to recommend a movie, or by the knot of customers hanging out by the counter, shooting the breeze and discussing film. The early video store was often a place to talk as well as to shop, and the persona and expertise of retailers and clerks structured the consumer experience of home video as much as the shelves on the wall. The people behind the counter, and in many cases those in front of it, were not merely moving through the consumption junction but were, in fact, integral parts of it. Consider the English pub, the French cafe, the German beer garden, or the American tavern: These are places where patrons can buy food or drink. But an analysis that focuses only on the producer/consumer exchange would overlook the vital role these and other spaces play in establishing and maintaining broader social relationships. Sociologist Ray Oldenburg describes such spaces as \"third places,\" a category that he uses to refer to \"a great variety of public places that host the regular, voluntary, informal, and happily anticipated gatherings of individuals beyond the realms of home and work.\" Such places serve to unite the neighborhood through simple, day-to-day interaction. For example, Oldenburg writes, \"In many American communities, the post office served this function well when everyone had a mailbox there; when everybody had to walk or drive to it; and it was kept open, by law, twenty-four hours a day.\" The video store, in its heyday, functioned in much the same way. It was a place where movie recommendations were personal, where taste was collectively negotiated through conversation rather than algorithm, and where the serendipity of browsing physical shelves created a kind of cultural literacy that scrolling through thumbnails on a screen simply cannot replicate. The clerks, often film students or cinephiles, served as informal curators, guiding customers toward discoveries they would never have made on their own.",
+    source: "Joshua M. Greenberg, \"From Betamax to Blockbuster\" (MIT Press, 2008). The MIT Press Reader. https://thereader.mitpress.mit.edu/the-lost-civic-life-of-movie-rental-stores/",
+    tags: ["technology","society","culture","film"], difficulty: "advanced", word_count: 412
+  },
+  {
+    id: 5, title: "How the Amish Let Technology in Without Letting It Take Over", created_at: "2026-08-12T02:15:00Z",
+    en: "In 2012, Big Tech was beginning to feel less like a burgeoning industry and more like a fact of daily life. Facebook had hit one billion monthly users, about half of America was regularly using smartphones, and the country was collectively spending about 120 billion minutes a month on social media. From directions to dating to deliveries, the most intimate and mundane routines of American life had suddenly become intermediated by apps that increasingly blurred the lines between convenience and dependence. Yet, it was at this inflection point -- when everyone seemed to be emphatically saying yes to technology -- that I began to seriously investigate why a certain community preferred to say no. I first began studying the Amish in 2012 as a doctoral researcher of media studies at Indiana University, located within a few hours of settlements in Elkhart, LaGrange, and Daviess counties. Going into the project, I knew what most everyone else did: that the Amish prized simple living, communal values, and religious discipline, while resisting certain technologies such as cars, TV, and electricity. In my initial conversations with Amish leaders, they told me that they were worried that new technology might diminish the sense of purpose people in their communities feel. They worried that new communication tools, such as smartphones and social media, would disrupt rituals, traditions, and their established communication patterns. Above all, they wanted to preserve their shared culture in which each person felt spiritually connected to their neighbors and the natural world. But the more time I spent in these communities -- three years total -- the more I realized that my original frame on their world was too myopic: It wasn't the metaphorical fish I was interested in; it was the water. Which is to say that I became less intrigued by Amish restrictions on technology than by the social world they sought to preserve and protect with those restrictions. In the end, I came to realize that the Amish are, in fact, technology-agnostic. They don't reject technology wholesale; they carefully evaluate each new tool through the lens of their core values. Does this device strengthen family and community bonds, or does it weaken them? Does it encourage face-to-face interaction, or does it replace it with something more isolating? Will it serve the community, or will the community end up serving it? These are questions that the rest of us, in our rush to adopt every new gadget and platform, rarely pause to ask -- and we are arguably worse off for it.",
+    source: "Lindsay Ems, \"Virtually Amish\" (MIT Press, 2022). The MIT Press Reader. https://thereader.mitpress.mit.edu/how-the-amish-let-technology-in-without-letting-it-take-over/",
+    tags: ["technology","society","culture","media"], difficulty: "advanced", word_count: 406
+  },
+  {
+    id: 6, title: "The False Promise of the First 'Smart' Homes", created_at: "2026-08-12T02:55:00Z",
+    en: "\"Imagine a house with a brain -- a house you can talk to, a house where every room adjusts automatically to match your changing moods. Imagine a house that is not just a backdrop but an active partner in your work, your family life, and your leisure activities. In short, imagine a house that is also your friend.\" This is Xanadu, the Computerized Home of Tomorrow, which opened its doors in 1983 in Florida, strategically located just a few miles from Disney World's Epcot Center. Xanadu's Yale-trained architect, Roy Mason, wanted to create a walk-through instruction manual for building a smart home. Mason saw this blurring of architecture and sociality as the answer to the many problems of the American family: loneliness, boredom, frustration, parent-child conflict, and general depression. The result proposed automation as remedy and liberation. Much like the techno-pessimistic nightmare imagined by Ray Bradbury's short story \"The Veldt,\" in which housekeeping and child-rearing are ceded to automated homes, Xanadu's \"electric hearth\" was run by a \"House Brain\" to control life support functions. (The House Brain is, in a way, another term for mother.) Staffed by a robot dubbed Robutler that remediated paid servant labor, the house aimed to take over a wide variety of tasks -- but only as the owners wished. The Brain, meanwhile, was a personal assistant, presaging the integration of Alexa and Siri into smart home systems. It was designed to provide customizability in managing various aspects of middle-class life. It could call local plumbers and neighbors, offer telemedicine, menu planning, and even outfit selection via an automated clothes-retrieval closet. Xanadu was not the first of its kind. In 1957, Disney unveiled the House of the Future in collaboration with MIT and Monsanto, which sought to showcase the engineering and design versatility of plastics. Visitors of Tomorrowland walked through the attraction and marveled at its features -- microwave ovens, wall-mounted TVs, adjustable sinks, modular bedrooms -- which would, of course, become commonplace in the decades to come. Likewise, Xanadu invited thousands of guests each day to see a possible home of tomorrow, augmented by technology that could be customized to conform to the changing needs and shapes of American families. But the smart home vision, then as now, was not without its shadows. The very technologies promised as liberatory also inscribed within them a vision of domesticity that was profoundly gendered, assuming that housework, childcare, and the emotional labor of family life were problems to be solved by machines rather than through a more equitable distribution of labor among family members.",
+    source: "Hannah Zeavin, \"Mother Media\" (MIT Press, 2026). The MIT Press Reader. https://thereader.mitpress.mit.edu/the-false-promise-of-the-first-smart-homes/",
+    tags: ["technology","architecture","history","society"], difficulty: "advanced", word_count: 420
+  },
+  {
+    id: 7, title: "The Vertical City and Its Discontents", created_at: "2026-01-01T00:00:00Z",
+    en: "The skyscraper, that quintessential emblem of twentieth-century ambition, has undergone a profound ontological shift in the first decades of the twenty-first. No longer merely an extrapolation of capitalist exuberance -- a phallic extrusion of steel and glass thrust skyward in defiance of gravity -- the contemporary tower aspires to a more nuanced synthesis of ecological stewardship, social porosity, and formal experimentation. Yet this aspiration is frequently thwarted by the intractable realities of speculative development: the exigencies of the pro forma, the tyranny of the floor plate, and the relentless optimization of net-to-gross ratios conspire to produce a generic verticality that belies its architects' loftier pretensions. Consider the recent proliferation of mixed-use supertalls across Southeast Asian metropolises. These towers, ostensibly conceived as self-contained urban ecosystems, often devolve into stratified enclaves where the public realm is reduced to a simulacrum of urbanity -- a manicured podium garden accessible only to residents, a sky lobby whose breathtaking panorama is contingent upon a keycard. The promise of social heterogeneity, of the serendipitous encounters that Jane Jacobs so eloquently championed, evaporates at the threshold of the elevator bank. The architectural avant-garde has responded with a repertoire of formal strategies intended to subvert this hermetic verticality. Rotated floor plates, interlocking volumes, and skybridges that weave between adjacent towers gesture toward a porosity that the programmatic logic of the building ultimately resists. The result is a proliferation of sculptural objects that are visually compelling but spatially impoverished -- trophies of formal virtuosity that fail to reconstitute the urban ground they so spectacularly abandon. Across cities from Singapore to Bangkok to Ho Chi Minh City, the supertall has become the default typology for urban development, yet its relationship to the street, to the neighborhood, and to the civic realm remains stubbornly ambiguous. The challenge for the next generation of architects and urbanists is not merely to design taller or more energy-efficient towers, but to fundamentally rethink the relationship between vertical density and horizontal urbanism -- to imagine a skyscraper that does not merely rise above the city but is genuinely of it.",
+    source: "Keller Easterling, \"Extrastatecraft: The Power of Infrastructure Space\" (Verso, 2014); adapted from \"Medium Design\" (Strelka Press, 2018)",
+    tags: ["architecture","urbanism","skyscraper","design"], difficulty: "advanced", word_count: 385
   }
 ];
-
-// ==================== SUPABASE CLIENT ====================
-let supabase = null;
-let dbPassages = [];
-
-function initSupabase() {
-  if (!SUPABASE_URL || SUPABASE_URL === 'YOUR_SUPABASE_URL') {
-    updateDbStatus(false);
-    return;
-  }
-  try {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    return supabase;
-  } catch (e) {
-    console.warn('Supabase init failed:', e);
-    updateDbStatus(false);
-    return null;
-  }
-}
-
-function updateDbStatus(online) {
-  const el = document.getElementById('dbStatus');
-  if (online) {
-    el.innerHTML = '<span class="status-dot online"></span>Online';
-  } else {
-    el.innerHTML = '<span class="status-dot offline"></span>Local';
-  }
-}
-
-// ==================== FETCH DATA ====================
-async function fetchPassages() {
-  // Try Supabase first
-  if (supabase) {
-    try {
-      const { data, error } = await supabase
-        .from('passages')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(200);
-      if (!error && data && data.length > 0) {
-        dbPassages = data.map(p => ({...p}));
-        updateDbStatus(true);
-        console.log('Loaded ' + data.length + ' passages from Supabase');
-        return;
-      }
-    } catch (e) {
-      console.warn('Supabase fetch failed:', e.message);
-    }
-  }
-
-  // Fallback: embedded data (always available, no fetch needed)
-  if (window.__PASSAGES__ && window.__PASSAGES__.length > 0) {
-    dbPassages = window.__PASSAGES__.map(p => ({...p}));
-    updateDbStatus(true);
-    console.log('Loaded ' + dbPassages.length + ' passages from embedded data');
-    return;
-  }
-
-  updateDbStatus(false);
-  console.log('No data available, using fallback');
-}
-
-function allPassages() {
-  return dbPassages.length > 0 ? dbPassages : FALLBACK_PASSAGES;
-}
 
 // ==================== APP STATE ====================
 const START_DATE = new Date('2026-01-01');
@@ -311,18 +276,17 @@ function debounceSearch() {
 }
 
 // ==================== INIT ====================
-async function init() {
+function init() {
   const savedTheme = localStorage.getItem('dailyReadingTheme') || 'light';
   document.documentElement.setAttribute('data-theme', savedTheme);
   document.getElementById('themeBtn').textContent = savedTheme === 'dark' ? 'Light' : 'Dark';
 
-  initSupabase();
-  await fetchPassages();
+  // Use embedded data directly - no external dependencies
+  document.getElementById('dbStatus').innerHTML = '<span class="status-dot online"></span>' + DB_PASSAGES.length + ' articles';
 
-  const passages = allPassages();
   const today = new Date();
   const dayIndex = Math.floor((today - START_DATE) / (1000 * 60 * 60 * 24));
-  selectedPassageId = (Math.abs(dayIndex) % Math.max(passages.length, 1)) + 1;
+  selectedPassageId = (Math.abs(dayIndex) % DB_PASSAGES.length) + 1;
 
   renderToday();
   renderArchive();
@@ -333,8 +297,12 @@ function updateDateBadge() {
   const today = new Date();
   const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
   document.getElementById('dateBadge').textContent = today.toLocaleDateString('en-US', options);
-  const count = allPassages().length;
-  document.getElementById('readingStats').textContent = count + ' articles in collection';
+  document.getElementById('readingStats').textContent = DB_PASSAGES.length + ' articles in collection';
+}
+
+// ==================== HELPERS ====================
+function findPassageById(id) {
+  return DB_PASSAGES.find(p => p.id === id);
 }
 
 // ==================== THEME ====================
@@ -358,11 +326,11 @@ function switchTab(tab) {
 
 // ==================== TODAY'S PASSAGE ====================
 function findPassageById(id) {
-  return allPassages().find(p => p.id === id);
+  return DB_PASSAGES.find(p => p.id === id);
 }
 
 function renderToday() {
-  const passage = findPassageById(selectedPassageId) || allPassages()[0];
+  const passage = findPassageById(selectedPassageId) || DB_PASSAGES[0];
   if (!passage) {
     document.getElementById('todayPassage').innerHTML = '<div class="no-results">No articles available.</div>';
     return;
@@ -482,7 +450,7 @@ document.addEventListener('click', (e) => {
 function renderArchive() {
   const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
   const list = document.getElementById('archiveList');
-  let filtered = [...allPassages()];
+  let filtered = [...DB_PASSAGES];
 
   if (searchTerm) {
     filtered = filtered.filter(p =>
