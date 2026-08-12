@@ -10,6 +10,8 @@ jobs:
   generate:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout
@@ -29,3 +31,11 @@ jobs:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: npm run generate
+
+      - name: Commit passages data
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add passages-data.json
+          git commit -m "Update passages data [skip ci]" || true
+          git push
