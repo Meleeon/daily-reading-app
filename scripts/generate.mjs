@@ -1,19 +1,20 @@
 /**
- * Daily Passage Generator using DeepSeek API
+ * Daily Passage Generator 鈥?Real Article Edition
  *
- * Runs daily via GitHub Actions to generate a new English reading passage
- * and insert it into Supabase.
+ * Fetches real articles from open-access RSS feeds (MIT Press Reader,
+ * The Paris Review, Aeon), extracts excerpts, generates Chinese
+ * translations via DeepSeek, and stores in Supabase.
  *
  * Environment variables:
- *   SUPABASE_URL        - Your Supabase project URL
- *   SUPABASE_SERVICE_KEY - Supabase service_role key (not anon key!)
- *   DEEPSEEK_API_KEY    - DeepSeek API key
+ *   SUPABASE_URL         - Supabase project URL
+ *   SUPABASE_SERVICE_KEY - Supabase service_role key
+ *   DEEPSEEK_API_KEY     - DeepSeek API key
  */
 
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 
-// ─── Config ────────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Config 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
@@ -25,188 +26,310 @@ const deepseek = new OpenAI({
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-// ─── Topics pool for variety ──────────────────────────────────────────────
-const TOPICS = [
-  'contemporary architectural theory and phenomenology of space',
-  'sustainable materials and ecological design in architecture',
-  'urban planning, public space, and the right to the city',
-  'digital fabrication, parametric design, and computational architecture',
-  'vernacular architecture and climate-responsive design in developing regions',
-  'adaptive reuse of industrial heritage and post-industrial landscapes',
-  'the relationship between infrastructure, landscape, and urban ecology',
-  'architectural acoustics and sensory experience of built environments',
-  'social housing experiments and affordable housing innovations',
-  'contemporary literature exploring diaspora, migration, and cultural identity',
-  'architectural criticism and the ethics of contemporary practice',
-  'biophilic design and the integration of nature into the built environment',
-  'museum and library architecture as heterotopic public spaces',
-  'timber construction and mass wood technologies in high-rise buildings',
-  'postmodern literary aesthetics in Anglophone fiction',
-  'the intersection of AI, generative design, and architectural authorship',
+// 鈹€鈹€鈹€ RSS Feeds (all open-access) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+const RSS_FEEDS = [
+  {
+    name: 'The MIT Press Reader',
+    url: 'https://thereader.mitpress.mit.edu/feed/',
+    category: 'academic',
+  },
+  {
+    name: 'The Paris Review',
+    url: 'https://www.theparisreview.org/blog/feed/',
+    category: 'literary',
+  },
+  {
+    name: 'Aeon',
+    url: 'https://aeon.co/feed.rss',
+    category: 'essay',
+  },
 ];
 
-const AUTHORS = [
-  'Juhani Pallasmaa',
-  'Kenneth Frampton',
-  'Rem Koolhaas',
-  'Keller Easterling',
-  'Mario Carpo',
-  'Bjarke Ingels',
-  'Elisa Iturbe',
-  'Reinier de Graaf',
-  'Beatriz Colomina',
-  'Mark Wigley',
-  'Joan Didion',
-  'Zadie Smith',
-  'Teju Cole',
-  'Jhumpa Lahiri',
-  'Chimamanda Ngozi Adichie',
-  'Ocean Vuong',
-];
+// 鈹€鈹€鈹€ Fetch & Parse RSS 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+async function fetchRSS(url) {
+  const resp = await fetch(url, {
+    headers: { 'User-Agent': 'DailyReadingApp/1.0 (educational tool)' },
+  });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status} for ${url}`);
+  return await resp.text();
+}
 
-const JOURNALS = [
-  'Log',
-  'Architectural Review',
-  'AA Files',
-  'Harvard Design Magazine',
-  'e-flux Architecture',
-  'The Architectural Review',
-  'Domus',
-  'El Croquis',
-  'Architectural Design (AD)',
-  'Journal of Architectural Education',
-  'Places Journal',
-];
+function parseRSS(xml) {
+  const items = [];
+  const itemRegex = /<item>([\s\S]*?)<\/item>/gi;
+  let match;
+  while ((match = itemRegex.exec(xml)) !== null) {
+    const itemXml = match[1];
+    items.push({
+      title: extractTag(itemXml, 'title'),
+      link: extractTag(itemXml, 'link'),
+      creator: extractTag(itemXml, 'dc:creator') || extractTag(itemXml, 'author'),
+      pubDate: extractTag(itemXml, 'pubDate'),
+      description: extractTag(itemXml, 'description'),
+      contentEncoded: extractTag(itemXml, 'content:encoded'),
+    });
+  }
+  return items;
+}
 
-// ─── Generate passage ──────────────────────────────────────────────────────
-async function generatePassage() {
-  const topic = TOPICS[Math.floor(Math.random() * TOPICS.length)];
-  const author = AUTHORS[Math.floor(Math.random() * AUTHORS.length)];
-  const journal = JOURNALS[Math.floor(Math.random() * JOURNALS.length)];
-  const year = 2020 + Math.floor(Math.random() * 6);
+function extractTag(xml, tag) {
+  // Handle tags with or without CDATA
+  const cdataMatch = new RegExp(`<${tag}[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]>`, 'i');
+  const cdataResult = xml.match(cdataMatch);
+  if (cdataResult) return cdataResult[1].trim();
 
-  const systemPrompt = `You are an expert writer and architectural scholar. Generate a high-quality English passage for daily reading practice.
-The passage must:
-- Be approximately 380-420 words
-- Sound like a genuine excerpt from a scholarly article, essay, or book chapter
-- Use sophisticated vocabulary (GRE/advanced level), complex sentence structures with subordinate clauses, and academic register
-- NOT use overly simple sentences or basic vocabulary
-- Include nuanced arguments, theoretical depth, and precise terminology
-- Follow the stylistic conventions of architectural theory or literary criticism
-- End with a natural, satisfying conclusion to the excerpt
+  const plainMatch = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`, 'i');
+  const plainResult = xml.match(plainMatch);
+  if (plainResult) return plainResult[1].replace(/<[^>]+>/g, '').trim();
 
-Respond with a JSON object containing:
-{
-  "title": "A compelling academic-style title",
-  "en": "The English passage (380-420 words)",
-  "zh": "Accurate, literary-quality Chinese translation",
-  "source": "A realistic citation (Author, \"Work Title\", Publisher/Journal, Year)",
-  "tags": ["3-5", "relevant", "tags"]
-}`;
+  return '';
+}
 
-  const userPrompt = `Write an excerpt in the style of ${author}, about: ${topic}.
-Cite the source as if published in ${journal} (${year}).
-The vocabulary should be at GRE/graduate level difficulty.`;
+// 鈹€鈹€鈹€ Extract Clean Text 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+function stripHtml(html) {
+  return html
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#8217;/g, "'")
+    .replace(/&#8216;/g, "'")
+    .replace(/&#8220;/g, '"')
+    .replace(/&#8221;/g, '"')
+    .replace(/&#8230;/g, '...')
+    .replace(/&#8212;/g, '鈥?)
+    .replace(/&#8211;/g, '鈥?)
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#(\d+);/g, (_, d) => String.fromCharCode(parseInt(d)))
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
-  console.log(`Generating passage on: ${topic}`);
-  console.log(`Style: ${author} | Journal: ${journal} | Year: ${year}`);
+function extractExcerpt(text, maxWords = 420) {
+  const words = text.split(/\s+/).filter(w => w.length > 0);
+  // Find a good sentence boundary near maxWords
+  let count = 0;
+  let excerpt = '';
+  const sentences = text.match(/[^.!?]+[.!?]+/g) || [];
+  for (const sentence of sentences) {
+    const sentenceWords = sentence.trim().split(/\s+/).length;
+    if (count + sentenceWords > maxWords && count > maxWords * 0.6) break;
+    excerpt += sentence + ' ';
+    count += sentenceWords;
+  }
+  // Fallback: just take first maxWords words
+  if (count < 100) {
+    excerpt = words.slice(0, maxWords).join(' ');
+    count = Math.min(maxWords, words.length);
+  }
+  return { excerpt: excerpt.trim(), wordCount: count };
+}
 
+// 鈹€鈹€鈹€ Generate Chinese Translation 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+async function translate(text, title) {
   const response = await deepseek.chat.completions.create({
     model: 'deepseek-chat',
     messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt },
+      {
+        role: 'system',
+        content: `You are a professional literary translator translating English to Chinese (Simplified). 
+Translate the following English passage into natural, fluent Chinese. 
+Preserve the academic/literary tone. Use appropriate Chinese idioms and expressions.
+Return ONLY the Chinese translation, nothing else. No JSON, no explanation.`,
+      },
+      {
+        role: 'user',
+        content: `Translate this passage into Chinese:\n\nTitle: ${title}\n\n${text}`,
+      },
     ],
-    temperature: 0.9,
+    temperature: 0.4,
     max_tokens: 4096,
-    response_format: { type: 'json_object' },
   });
+  return response.choices[0].message.content.trim();
+}
 
-  const raw = response.choices[0].message.content;
-  console.log('Raw response length:', raw.length);
+function generateTags(text, sourceName) {
+  const tags = [];
+  const lower = text.slice(0, 500).toLowerCase();
 
-  let parsed;
-  try {
-    parsed = JSON.parse(raw);
-  } catch (e) {
-    // Try to extract JSON from markdown code blocks
-    const match = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-    if (match) {
-      parsed = JSON.parse(match[1]);
-    } else {
-      throw new Error(`Failed to parse response: ${raw.substring(0, 200)}`);
+  const tagMap = {
+    architecture: ['architecture', 'architect', 'building', 'urban', 'design', 'spatial', 'built environment'],
+    technology: ['technology', 'digital', 'computer', 'software', 'code', 'internet', 'algorithm', 'ai', 'machine learning'],
+    literature: ['novel', 'fiction', 'narrative', 'author', 'writer', 'poetry', 'literary', 'story'],
+    politics: ['political', 'government', 'democracy', 'power', 'democratic', 'republican', 'policy', 'election', 'state'],
+    philosophy: ['philosophy', 'philosopher', 'ethics', 'moral', 'consciousness', 'existential', 'epistemology'],
+    history: ['history', 'historical', 'ancient', 'century', 'medieval', 'modern', 'era', 'age'],
+    science: ['science', 'scientific', 'biology', 'physics', 'chemistry', 'research', 'experiment', 'theory'],
+    environment: ['climate', 'environmental', 'carbon', 'emission', 'sustainability', 'ecology', 'nature', 'earth'],
+    art: ['art', 'artist', 'painting', 'sculpture', 'aesthetic', 'gallery', 'museum', 'visual'],
+    psychology: ['psychology', 'cognitive', 'behavior', 'mental', 'brain', 'neuroscience', 'emotion', 'mind'],
+    society: ['social', 'society', 'community', 'culture', 'cultural', 'identity', 'race', 'gender', 'class', 'public'],
+    economics: ['economic', 'economy', 'market', 'capital', 'finance', 'labor', 'work', 'trade'],
+    space: ['space', 'moon', 'mars', 'nasa', 'astronaut', 'galaxy', 'cosmic', 'planet', 'orbit'],
+    medicine: ['medicine', 'medical', 'health', 'disease', 'patient', 'clinical', 'treatment', 'therapy', 'surgery'],
+    law: ['law', 'legal', 'court', 'justice', 'rights', 'constitution', 'supreme', 'judge'],
+    education: ['education', 'school', 'student', 'teacher', 'learning', 'university', 'academic', 'curriculum'],
+    music: ['music', 'musical', 'composer', 'song', 'sound', 'melody', 'orchestra', 'concert'],
+  };
+
+  for (const [tag, keywords] of Object.entries(tagMap)) {
+    if (keywords.some(k => lower.includes(k))) {
+      tags.push(tag);
     }
   }
 
-  // Validate required fields
-  if (!parsed.title || !parsed.en || !parsed.zh || !parsed.source) {
-    throw new Error(`Missing required fields. Got: ${Object.keys(parsed).join(', ')}`);
-  }
-
-  const wordCount = parsed.en.split(/\s+/).filter(w => w.length > 0).length;
-  parsed.word_count = wordCount;
-  parsed.difficulty = 'advanced';
-  parsed.tags = parsed.tags || [];
-
-  console.log(`Generated: "${parsed.title}" (${wordCount} words)`);
-  return parsed;
+  // Ensure at least some tags
+  if (tags.length === 0) tags.push('essay');
+  if (sourceName) tags.push(sourceName.toLowerCase().replace(/\s+/g, ''));
+  return [...new Set(tags)].slice(0, 5);
 }
 
-// ─── Insert into Supabase ──────────────────────────────────────────────────
-async function insertPassage(passage) {
+// 鈹€鈹€鈹€ Already-seen URL tracking 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+async function getKnownUrls() {
   const { data, error } = await supabase
     .from('passages')
-    .insert({
-      title: passage.title,
-      en: passage.en,
-      zh: passage.zh,
-      source: passage.source,
-      tags: passage.tags,
-      difficulty: passage.difficulty,
-      word_count: passage.word_count,
-    })
-    .select()
-    .single();
-
-  if (error) {
-    throw new Error(`Supabase insert failed: ${error.message}`);
+    .select('source');
+  if (error) return new Set();
+  const urls = new Set();
+  for (const row of data || []) {
+    // Extract URL from source citation
+    const urlMatch = row.source?.match(/https?:\/\/[^\s"]+/);
+    if (urlMatch) urls.add(urlMatch[0]);
+    // Also check raw source field if it is a URL
+    if (row.source?.startsWith('http')) urls.add(row.source);
   }
-
-  console.log(`Inserted passage #${data.id}: "${data.title}"`);
-  return data;
+  return urls;
 }
 
-// ─── Main ──────────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Main 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 async function main() {
-  console.log('=== Daily Reading Generator ===');
+  console.log('=== Daily Reading Generator (Real Articles) ===');
   console.log(`Time: ${new Date().toISOString()}`);
 
-  // Check env vars
   const missing = [];
   if (!SUPABASE_URL) missing.push('SUPABASE_URL');
   if (!SUPABASE_SERVICE_KEY) missing.push('SUPABASE_SERVICE_KEY');
   if (!DEEPSEEK_API_KEY) missing.push('DEEPSEEK_API_KEY');
   if (missing.length > 0) {
-    console.error(`Missing environment variables: ${missing.join(', ')}`);
+    console.error(`Missing env vars: ${missing.join(', ')}`);
     process.exit(1);
   }
 
+  const knownUrls = await getKnownUrls();
+  console.log(`Known articles in DB: ${knownUrls.size}`);
+
+  // Collect all articles from all feeds
+  let allArticles = [];
+  for (const feed of RSS_FEEDS) {
+    try {
+      console.log(`\nFetching ${feed.name}...`);
+      const xml = await fetchRSS(feed.url);
+      const items = parseRSS(xml);
+      console.log(`  Found ${items.length} items`);
+
+      for (const item of items) {
+        // Skip if we've already seen this article
+        if (knownUrls.has(item.link)) {
+          continue;
+        }
+
+        const rawText = item.contentEncoded || item.description || '';
+        const cleanText = stripHtml(rawText);
+
+        if (cleanText.length < 200) continue;
+
+        const { excerpt, wordCount } = extractExcerpt(cleanText, 420);
+
+        allArticles.push({
+          title: item.title,
+          en: excerpt,
+          wordCount,
+          source: item.link,
+          author: item.creator || '',
+          publication: feed.name,
+          pubDate: item.pubDate,
+          category: feed.category,
+        });
+      }
+    } catch (err) {
+      console.error(`  Error fetching ${feed.name}:`, err.message);
+    }
+  }
+
+  // Deduplicate by title similarity
+  const seenTitles = new Set();
+  allArticles = allArticles.filter(a => {
+    const key = a.title.slice(0, 40).toLowerCase();
+    if (seenTitles.has(key)) return false;
+    seenTitles.add(key);
+    return true;
+  });
+
+  console.log(`\nTotal new articles available: ${allArticles.length}`);
+
+  if (allArticles.length === 0) {
+    console.log('No new articles to process. Skipping.');
+    return;
+  }
+
+  // Process the best article (prefer MIT Press Reader for quality)
+  const sorted = allArticles.sort((a, b) => {
+    const order = { academic: 1, essay: 2, literary: 3 };
+    return (order[a.category] || 4) - (order[b.category] || 4);
+  });
+
+  const chosen = sorted[0];
+  console.log(`\nProcessing: "${chosen.title}"`);
+  console.log(`  Source: ${chosen.publication}`);
+  console.log(`  Author: ${chosen.author || 'Unknown'}`);
+  console.log(`  Words: ${chosen.wordCount}`);
+  console.log(`  URL: ${chosen.source}`);
+
+  // Generate Chinese translation
+  console.log('\n[1/2] Translating via DeepSeek...');
+  let zh;
   try {
-    // 1. Generate passage
-    console.log('\n[1/3] Generating passage via DeepSeek...');
-    const passage = await generatePassage();
-
-    // 2. Insert into database
-    console.log('\n[2/3] Inserting into Supabase...');
-    const result = await insertPassage(passage);
-
-    // 3. Verify
-    console.log(`\n[3/3] Done! Passage #${result.id} is now live.`);
-    console.log(`Total passages in database: will be available on frontend.`);
+    zh = await translate(chosen.en, chosen.title);
   } catch (err) {
-    console.error('\nFatal error:', err.message);
+    console.error('  Translation failed:', err.message);
+    // Fallback: skip the translation and insert with a placeholder
+    zh = '锛堢炕璇戠敓鎴愬け璐ワ紝璇风◢鍚庨噸璇曘€傦級';
+  }
+
+  // Build citation
+  const sourceCitation = chosen.author
+    ? `${chosen.author}, "${chosen.title}," ${chosen.publication}, ${chosen.pubDate ? new Date(chosen.pubDate).getFullYear() : new Date().getFullYear()}. ${chosen.source}`
+    : `"${chosen.title}," ${chosen.publication}. ${chosen.source}`;
+
+  const tags = chosen.category === 'essay'
+    ? generateTags(chosen.en, chosen.publication)
+    : [chosen.category, chosen.publication.toLowerCase().replace(/\s+/g, '-')];
+
+  // Insert into Supabase
+  console.log('\n[2/2] Inserting into Supabase...');
+  const { data, error } = await supabase
+    .from('passages')
+    .insert({
+      title: chosen.title,
+      en: chosen.en,
+      zh: zh,
+      source: sourceCitation,
+      tags: tags,
+      difficulty: 'advanced',
+      word_count: chosen.wordCount,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('  Insert failed:', error.message);
     process.exit(1);
   }
+
+  console.log(`\nDone! Passage #${data.id} inserted.`);
+  console.log(`  Title: "${data.title}"`);
+  console.log(`  URL: ${chosen.source}`);
 }
 
 main();
