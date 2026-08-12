@@ -13,6 +13,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
+import { writeFileSync } from 'node:fs';
 
 // ---- Config ---------------------------------------------------------------
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -330,6 +331,17 @@ async function main() {
   console.log('\nDone! Passage #' + data.id + ' inserted.');
   console.log('  Title: "' + data.title + '"');
   console.log('  URL: ' + chosen.source);
+
+  // Export all passages to JSON for offline/China fallback
+  const { data: allPassages, error: fetchErr } = await supabase
+    .from('passages')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(100);
+  if (!fetchErr && allPassages) {
+    writeFileSync('passages-data.json', JSON.stringify(allPassages, null, 2));
+    console.log('  Exported ' + allPassages.length + ' passages to passages-data.json');
+  }
 }
 
 main();
