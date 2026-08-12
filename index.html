@@ -1,28 +1,26 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>姣忔棩鑻辫闃呰</title>
+<title>Daily Reading</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
-  --bg: #fdfaf3;
+  --bg: #faf8f5;
   --card-bg: #ffffff;
-  --text: #2c2416;
-  --text-secondary: #6b5e4a;
+  --text: #1a1a1a;
+  --text-secondary: #6b6b6b;
   --accent: #8b5e3c;
-  --accent-light: #e8d5c4;
+  --accent-light: #f0e4d8;
   --border: #e0d5c1;
-  --shadow: 0 2px 16px rgba(44,36,22,0.08);
+  --shadow: 0 2px 16px rgba(0,0,0,0.06);
   --highlight: #fff3cd;
   --tooltip-bg: #1e1b18;
-  --tooltip-text: #f0e6d3;
+  --tooltip-text: #f5efe4;
   --tag-bg: #f5efe4;
   --tag-text: #6b5e4a;
-  --input-bg: #fdfaf3;
-  --badge: #8b5e3c;
-  --success: #4a7c59;
+  --input-bg: #faf8f5;
 }
 [data-theme="dark"] {
   --bg: #1a1815;
@@ -39,57 +37,55 @@
   --tag-bg: #2d2820;
   --tag-text: #a69880;
   --input-bg: #252220;
-  --badge: #c9975a;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
-  font-family: 'Georgia','Noto Serif SC','Source Han Serif SC','SimSun',serif;
+  font-family: 'Georgia', 'Times New Roman', serif;
   background:var(--bg); color:var(--text); min-height:100vh; line-height:1.8;
   transition:background 0.3s,color 0.3s;
 }
 .container { max-width:860px; margin:0 auto; padding:20px 24px 60px; }
 .header {
   display:flex; justify-content:space-between; align-items:center;
-  padding:24px 0; border-bottom:1px solid var(--border); margin-bottom:32px;
+  padding:20px 0; border-bottom:1px solid var(--border); margin-bottom:28px;
 }
-.header h1 { font-size:1.5rem; font-weight:400; letter-spacing:0.04em; color:var(--accent); }
-.header-actions { display:flex; gap:12px; align-items:center; }
+.header h1 { font-size:1.4rem; font-weight:400; letter-spacing:0.04em; color:var(--accent); }
+.header-actions { display:flex; gap:10px; align-items:center; }
 .header-btn {
   background:none; border:1px solid var(--border); color:var(--text-secondary);
-  padding:6px 14px; border-radius:20px; cursor:pointer; font-size:0.85rem;
+  padding:6px 14px; border-radius:20px; cursor:pointer; font-size:0.82rem;
   font-family:inherit; transition:all 0.2s;
 }
 .header-btn:hover { border-color:var(--accent); color:var(--accent); }
-.status-dot {
-  width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px;
-}
-.status-dot.online { background:var(--success); }
+.status-dot { width:7px; height:7px; border-radius:50%; display:inline-block; margin-right:5px; }
+.status-dot.online { background:#4a7c59; }
 .status-dot.offline { background:#c44; }
-.tabs { display:flex; gap:0; margin-bottom:28px; border-bottom:1px solid var(--border); }
+.tabs { display:flex; gap:0; margin-bottom:24px; border-bottom:1px solid var(--border); }
 .tab {
-  padding:10px 24px; cursor:pointer; font-size:0.95rem; color:var(--text-secondary);
+  padding:8px 20px; cursor:pointer; font-size:0.9rem; color:var(--text-secondary);
   border-bottom:2px solid transparent; transition:all 0.2s; background:none; border-top:none;
   border-left:none; border-right:none; font-family:inherit;
 }
 .tab:hover { color:var(--text); }
 .tab.active { color:var(--accent); border-bottom-color:var(--accent); }
 .daily-header {
-  display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:8px;
+  display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;
 }
 .date-badge {
-  font-size:0.85rem; color:var(--text-secondary); background:var(--accent-light);
+  font-size:0.82rem; color:var(--text-secondary); background:var(--accent-light);
   padding:4px 14px; border-radius:20px;
 }
 .passage-card {
-  background:var(--card-bg); border-radius:12px; padding:36px 32px;
-  box-shadow:var(--shadow); border:1px solid var(--border); margin-bottom:28px;
+  background:var(--card-bg); border-radius:10px; padding:32px 28px;
+  box-shadow:var(--shadow); border:1px solid var(--border); margin-bottom:24px;
 }
 .passage-card h2 {
-  font-size:1.25rem; font-weight:400; margin-bottom:24px;
+  font-size:1.2rem; font-weight:400; margin-bottom:20px;
   color:var(--accent); letter-spacing:0.02em;
 }
 .english-text {
-  font-size:1.1rem; line-height:2; margin-bottom:32px; text-align:justify;
+  font-size:1.08rem; line-height:1.95; margin-bottom:24px; text-align:justify;
+  -webkit-font-smoothing: antialiased;
 }
 .english-text .word {
   cursor:pointer; transition:background 0.15s; border-radius:3px; padding:1px 2px; margin:0 -1px;
@@ -97,102 +93,82 @@ body {
 .english-text .word:hover { background:var(--highlight); }
 .english-text .word.active { background:var(--highlight); }
 .source-citation {
-  font-size:0.85rem; color:var(--text-secondary); font-style:italic;
-  padding-top:16px; border-top:1px solid var(--border);
-}
-.translation-toggle {
-  display:flex; gap:10px; align-items:center; margin-top:24px;
-}
-.toggle-btn {
-  background:none; border:1px solid var(--border); color:var(--text-secondary);
-  padding:8px 20px; border-radius:20px; cursor:pointer; font-size:0.85rem;
-  font-family:inherit; transition:all 0.2s;
-}
-.toggle-btn:hover { border-color:var(--accent); color:var(--accent); }
-.toggle-btn.on { background:var(--accent); color:#fff; border-color:var(--accent); }
-.translation-section { margin-top:20px; display:none; }
-.translation-section.show { display:block; }
-.chinese-text {
-  font-family:'Noto Serif SC','Source Han Serif SC','SimSun',serif;
-  font-size:1.05rem; line-height:2; color:var(--text-secondary);
-  text-align:justify; padding:20px 24px; background:var(--accent-light);
-  border-radius:8px; border-left:3px solid var(--accent);
+  font-size:0.82rem; color:var(--text-secondary); font-style:italic;
+  padding-top:14px; border-top:1px solid var(--border);
 }
 .word-tooltip {
   position:fixed; z-index:1000; background:var(--tooltip-bg); color:var(--tooltip-text);
-  padding:14px 18px; border-radius:10px; font-size:0.9rem; max-width:320px;
-  box-shadow:0 8px 30px rgba(0,0,0,0.25); display:none; line-height:1.6;
+  padding:14px 18px; border-radius:10px; font-size:0.88rem; max-width:320px;
+  box-shadow:0 8px 30px rgba(0,0,0,0.25); display:none; line-height:1.5;
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 }
 .word-tooltip .word-head { font-size:1.1rem; font-weight:600; margin-bottom:6px; }
-.word-tooltip .phonetic { color:var(--accent); font-size:0.8rem; margin-bottom:6px; }
+.word-tooltip .phonetic { color:#c9975a; font-size:0.8rem; margin-bottom:6px; }
 .word-tooltip .def { margin-bottom:4px; }
-.word-tooltip .def strong { color:var(--accent); }
+.word-tooltip .def strong { color:#c9975a; }
 .word-tooltip .loading { opacity:0.7; font-style:italic; }
 .passages-list { display:none; }
 .passages-list.show { display:block; }
 .search-bar {
-  display:flex; gap:12px; margin-bottom:24px; flex-wrap:wrap;
+  display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;
 }
 .search-input {
   flex:1; min-width:200px; padding:10px 16px; border:1px solid var(--border);
-  border-radius:24px; font-size:0.9rem; background:var(--input-bg); color:var(--text);
+  border-radius:20px; font-size:0.88rem; background:var(--input-bg); color:var(--text);
   font-family:inherit;
 }
 .search-input:focus { outline:none; border-color:var(--accent); }
-.archive-list { display:flex; flex-direction:column; gap:12px; }
+.archive-list { display:flex; flex-direction:column; gap:10px; }
 .archive-item {
-  background:var(--card-bg); border:1px solid var(--border); border-radius:10px;
-  padding:20px 24px; cursor:pointer; transition:all 0.2s; box-shadow:var(--shadow);
+  background:var(--card-bg); border:1px solid var(--border); border-radius:8px;
+  padding:18px 22px; cursor:pointer; transition:all 0.2s; box-shadow:var(--shadow);
 }
 .archive-item:hover { border-color:var(--accent); transform:translateY(-1px); }
-.archive-item .archive-date { font-size:0.8rem; color:var(--text-secondary); margin-bottom:6px; }
-.archive-item .archive-title { font-size:1.05rem; color:var(--text); margin-bottom:8px; }
+.archive-item .archive-date { font-size:0.78rem; color:var(--text-secondary); margin-bottom:4px; }
+.archive-item .archive-title { font-size:1rem; color:var(--text); margin-bottom:6px; }
 .archive-item .archive-preview {
-  font-size:0.9rem; color:var(--text-secondary); overflow:hidden;
+  font-size:0.85rem; color:var(--text-secondary); overflow:hidden;
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
 }
-.archive-item .archive-tags { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+.archive-item .archive-tags { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
 .archive-tag {
-  font-size:0.75rem; background:var(--tag-bg); color:var(--tag-text);
-  padding:2px 10px; border-radius:12px;
+  font-size:0.72rem; background:var(--tag-bg); color:var(--tag-text);
+  padding:2px 10px; border-radius:10px;
 }
-.archive-item .archive-source { font-size:0.8rem; color:var(--accent); margin-top:8px; font-style:italic; }
+.archive-item .archive-source { font-size:0.78rem; color:var(--accent); margin-top:6px; font-style:italic; }
 .modal-overlay {
   position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5);
   z-index:999; display:none; justify-content:center; align-items:center; padding:20px;
 }
 .modal-overlay.show { display:flex; }
 .modal {
-  background:var(--card-bg); border-radius:16px; max-width:800px; width:100%;
-  max-height:85vh; overflow-y:auto; padding:36px 32px; box-shadow:0 20px 60px rgba(0,0,0,0.3);
+  background:var(--card-bg); border-radius:14px; max-width:800px; width:100%;
+  max-height:85vh; overflow-y:auto; padding:32px 28px; box-shadow:0 20px 60px rgba(0,0,0,0.3);
   position:relative;
 }
 .modal-close {
-  position:absolute; top:16px; right:20px; background:none; border:none;
-  font-size:1.5rem; cursor:pointer; color:var(--text-secondary); line-height:1;
+  position:absolute; top:14px; right:18px; background:none; border:none;
+  font-size:1.4rem; cursor:pointer; color:var(--text-secondary); line-height:1;
 }
 .modal-close:hover { color:var(--text); }
-.modal .english-text { font-size:1.05rem; }
-.modal .chinese-text { font-size:0.95rem; }
-.no-results { text-align:center; padding:40px; color:var(--text-secondary); font-size:0.95rem; }
-.reading-stats { font-size:0.8rem; color:var(--text-secondary); margin-top:8px; }
-@keyframes pulse { 0%,100% { opacity:0.4; } 50% { opacity:1; } }
-.loading-dot { animation:pulse 1.2s ease-in-out infinite; }
-.loading-dot:nth-child(2) { animation-delay:0.2s; }
-.loading-dot:nth-child(3) { animation-delay:0.4s; }
-.loading-indicator { text-align:center; padding:40px; color:var(--text-secondary); }
+.no-results { text-align:center; padding:40px; color:var(--text-secondary); font-size:0.9rem; }
+.reading-stats { font-size:0.78rem; color:var(--text-secondary); }
+.loading-indicator { text-align:center; padding:60px; color:var(--text-secondary); }
 .spinner {
   display:inline-block; width:24px; height:24px; border:3px solid var(--border);
   border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform:rotate(360deg); } }
+@keyframes pulse { 0%,100% { opacity:0.4; } 50% { opacity:1; } }
+.loading-dot { animation:pulse 1.2s ease-in-out infinite; }
+.loading-dot:nth-child(2) { animation-delay:0.2s; }
+.loading-dot:nth-child(3) { animation-delay:0.4s; }
 @media (max-width:640px) {
-  .container { padding:12px 16px 40px; }
-  .passage-card { padding:24px 18px; }
+  .container { padding:10px 14px 40px; }
+  .passage-card { padding:22px 16px; }
   .english-text { font-size:1rem; }
-  .header h1 { font-size:1.2rem; }
-  .tab { padding:8px 16px; font-size:0.85rem; }
+  .header h1 { font-size:1.1rem; }
+  .tab { padding:8px 14px; font-size:0.82rem; }
 }
 </style>
 </head>
@@ -203,16 +179,16 @@ body {
   <header class="header">
     <h1>Daily Reading</h1>
     <div class="header-actions">
-      <span style="font-size:0.75rem;color:var(--text-secondary);display:flex;align-items:center;" id="dbStatus">
-        <span class="status-dot offline"></span>绂荤嚎妯″紡
+      <span style="font-size:0.72rem;color:var(--text-secondary);display:flex;align-items:center;" id="dbStatus">
+        <span class="status-dot offline"></span>Loading
       </span>
       <button class="header-btn" onclick="toggleTheme()" id="themeBtn">Dark</button>
     </div>
   </header>
 
   <nav class="tabs">
-    <button class="tab active" data-tab="today" onclick="switchTab('today')">浠婃棩闃呰</button>
-    <button class="tab" data-tab="archive" onclick="switchTab('archive')">鏂囩珷姹囨€?/button>
+    <button class="tab active" data-tab="today" onclick="switchTab('today')">Today</button>
+    <button class="tab" data-tab="archive" onclick="switchTab('archive')">Archive</button>
   </nav>
 
   <section id="todaySection">
@@ -225,9 +201,8 @@ body {
 
   <section id="archiveSection" class="passages-list">
     <div class="search-bar">
-      <input type="text" class="search-input" id="searchInput" placeholder="鎼滅储鍏抽敭璇?.. (鑻辨枃/涓枃/鏃ユ湡/鍑哄)" oninput="debounceSearch()">
-      <input type="date" class="search-input" id="dateFilter" style="flex:0; min-width:150px;" onchange="renderArchive()">
-      <button class="header-btn" onclick="document.getElementById('searchInput').value='';document.getElementById('dateFilter').value='';renderArchive();">娓呴櫎</button>
+      <input type="text" class="search-input" id="searchInput" placeholder="Search by title, keyword, author, date..." oninput="debounceSearch()">
+      <button class="header-btn" onclick="document.getElementById('searchInput').value=''; renderArchive();">Clear</button>
     </div>
     <div class="archive-list" id="archiveList"></div>
   </section>
@@ -252,8 +227,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const FALLBACK_PASSAGES = [
   {
     id: 1, title: "The Vertical City and Its Discontents", created_at: "2026-01-01T00:00:00Z",
-    en: `The skyscraper, that quintessential emblem of twentieth-century ambition, has undergone a profound ontological shift in the first decades of the twenty-first. No longer merely an extrapolation of capitalist exuberance鈥攁 phallic extrusion of steel and glass thrust skyward in defiance of gravity鈥攖he contemporary tower aspires to a more nuanced synthesis of ecological stewardship, social porosity, and formal experimentation. Yet this aspiration is frequently thwarted by the intractable realities of speculative development: the exigencies of the pro forma, the tyranny of the floor plate, and the relentless optimization of net-to-gross ratios conspire to produce a generic verticality that belies its architects' loftier pretensions. Consider the recent proliferation of mixed-use supertalls across Southeast Asian metropolises. These towers, ostensibly conceived as self-contained urban ecosystems, often devolve into stratified enclaves where the public realm is reduced to a simulacrum of urbanity鈥攁 manicured podium garden accessible only to residents, a sky lobby whose breathtaking panorama is contingent upon a keycard. The architectural avant-garde has responded with a repertoire of formal strategies intended to subvert this hermetic verticality. Rotated floor plates, interlocking volumes, and skybridges that weave between adjacent towers gesture toward a porosity that the programmatic logic of the building ultimately resists.`,
-    zh: `鎽╁ぉ澶фゼ鈥斺€斾簩鍗佷笘绾泟蹇冪殑鍏稿瀷璞″緛鈥斺€斿湪浜屽崄涓€涓栫邯鏈€鍒濆嚑鍗佸勾缁忓巻浜嗕竴鍦烘繁鍒荤殑鏈綋璁鸿浆鍙樸€傚綋浠ｅ妤间笉鍐嶄粎浠呮槸璧勬湰涓讳箟绻佽崳鐨勫鎺ㄢ€斺€斾竴绉嶆寫鎴橀噸鍔涚殑閽㈤搧涓庣幓鐠冪殑闃冲叿寮忕獊璧封€斺€旇€屾槸娓存湜瀹炵幇鐢熸€佺鐞嗐€佺ぞ浼氭笚閫忔€т笌褰㈠紡瀹為獙涔嬮棿鏇村井濡欑殑缁煎悎銆傜劧鑰岋紝杩欑娓存湜甯稿父琚姇鏈烘€у紑鍙戦毦浠ラ┚椹殑鐜板疄鎵€鎸触锛氳储鍔℃ā鍨嬬殑绱ц揩瑕佹眰銆佹ゼ鏉垮钩闈㈢殑涓撳埗銆佷互鍙婂噣闈㈢Н涓庢瘺闈㈢Н姣旂巼鐨勪笉鎳堜紭鍖栵紝鍏卞悓鐐埗鍑轰竴绉嶅崈绡囦竴寰嬬殑鍨傜洿鎬э紝鎺╃洊浜嗗缓绛戝笀浠洿楂樿繙鐨勬姳璐熴€備互涓滃崡浜氬ぇ閮藉競杩戝勾鏉ユ縺澧炵殑娣峰悎鐢ㄩ€旇秴楂樺眰涓轰緥銆傝繖浜涘妤艰〃闈笂琚瀯鎯充负鑷粰鑷冻鐨勫煄甯傜敓鎬佺郴缁燂紝鍗村父甯搁€€鍖栦负鍒嗗眰鐨勯鍦帮紝鍏叡棰嗗煙鍦ㄦ娌︿负閮藉競鎬х殑鎷熷儚銆傚缓绛戝墠鍗淳浠ヤ竴绯诲垪褰㈠紡绛栫暐鍥炲簲锛屾剰鍥鹃瑕嗚繖绉嶅皝闂殑鍨傜洿鎬р€斺€旀棆杞殑妤兼澘銆佷氦閿欑殑浣撻噺鍜岀┖涓繛寤娾€斺€旀殫绀虹潃涓€绉嶅缓绛戞渶缁堢殑鍔熻兘閫昏緫鎵€鎶楁嫆鐨勬笚閫忔€с€俙,
+    en: "The skyscraper, that quintessential emblem of twentieth-century ambition, has undergone a profound ontological shift in the first decades of the twenty-first. No longer merely an extrapolation of capitalist exuberance -- a phallic extrusion of steel and glass thrust skyward in defiance of gravity -- the contemporary tower aspires to a more nuanced synthesis of ecological stewardship, social porosity, and formal experimentation. Yet this aspiration is frequently thwarted by the intractable realities of speculative development: the exigencies of the pro forma, the tyranny of the floor plate, and the relentless optimization of net-to-gross ratios conspire to produce a generic verticality that belies its architects' loftier pretensions. Consider the recent proliferation of mixed-use supertalls across Southeast Asian metropolises. These towers, ostensibly conceived as self-contained urban ecosystems, often devolve into stratified enclaves where the public realm is reduced to a simulacrum of urbanity -- a manicured podium garden accessible only to residents, a sky lobby whose breathtaking panorama is contingent upon a keycard. The architectural avant-garde has responded with a repertoire of formal strategies intended to subvert this hermetic verticality. Rotated floor plates, interlocking volumes, and skybridges that weave between adjacent towers gesture toward a porosity that the programmatic logic of the building ultimately resists.",
     source: "Keller Easterling, \"Extrastatecraft: The Power of Infrastructure Space\" (Verso, 2014)",
     tags: ["architecture","urbanism","skyscraper"], difficulty: "advanced", word_count: 385
   }
@@ -261,7 +235,6 @@ const FALLBACK_PASSAGES = [
 
 // ==================== SUPABASE CLIENT ====================
 let supabase = null;
-let isOnline = false;
 let dbPassages = [];
 
 function initSupabase() {
@@ -271,7 +244,6 @@ function initSupabase() {
   }
   try {
     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    updateDbStatus(true);
     return supabase;
   } catch (e) {
     console.warn('Supabase init failed:', e);
@@ -281,57 +253,56 @@ function initSupabase() {
 }
 
 function updateDbStatus(online) {
-  isOnline = online;
   const el = document.getElementById('dbStatus');
   if (online) {
-    el.innerHTML = '<span class="status-dot online"></span>鍦ㄧ嚎妯″紡';
-    el.title = '宸茶繛鎺?Supabase 鏁版嵁搴?;
+    el.innerHTML = '<span class="status-dot online"></span>Online';
   } else {
-    el.innerHTML = '<span class="status-dot offline"></span>绂荤嚎妯″紡';
-    el.title = '鏈繛鎺ユ暟鎹簱锛屼娇鐢ㄦ湰鍦扮ず渚嬫枃绔?;
+    el.innerHTML = '<span class="status-dot offline"></span>Local';
   }
 }
 
-// ==================== FETCH FROM SUPABASE ====================
+// ==================== FETCH DATA ====================
 async function fetchPassages() {
-  if (!supabase) {
-    dbPassages = [];
-    await loadLocalData();
-    return;
+  // Try Supabase first
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('passages')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(200);
+      if (!error && data && data.length > 0) {
+        dbPassages = data.map(p => ({...p}));
+        updateDbStatus(true);
+        console.log('Loaded ' + data.length + ' passages from Supabase');
+        return;
+      }
+    } catch (e) {
+      console.warn('Supabase fetch failed:', e.message);
+    }
   }
-  try {
-    const { data, error } = await supabase
-      .from('passages')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(200);
-    if (error) throw error;
-    dbPassages = data || [];
-    updateDbStatus(true);
-  } catch (e) {
-    console.warn('Fetch passages failed:', e.message);
-    dbPassages = [];
-    updateDbStatus(false);
-    await loadLocalData();
-  }
-}
 
-async function loadLocalData() {
+  // Fallback: local JSON
   try {
     const resp = await fetch('passages-data.json');
     if (resp.ok) {
-      const data = await resp.json();
-      if (data && data.length > 0) {
-        dbPassages = data;
-        updateDbStatus(true);
-        console.log('Loaded ' + data.length + ' passages from local data');
-        return;
+      const text = await resp.text();
+      if (text.trim().length > 0) {
+        const data = JSON.parse(text);
+        if (data && data.length > 0) {
+          dbPassages = data.map(p => ({...p}));
+          updateDbStatus(true);
+          console.log('Loaded ' + data.length + ' passages from local data');
+          return;
+        }
       }
     }
   } catch (e) {
     console.warn('Local data load failed:', e.message);
   }
-  dbPassages = [];
+
+  updateDbStatus(false);
+  console.log('Using fallback passages');
 }
 
 function allPassages() {
@@ -341,7 +312,6 @@ function allPassages() {
 // ==================== APP STATE ====================
 const START_DATE = new Date('2026-01-01');
 let currentTab = 'today';
-let showTranslation = false;
 let selectedPassageId = null;
 let searchTimeout = null;
 
@@ -372,9 +342,9 @@ async function init() {
 function updateDateBadge() {
   const today = new Date();
   const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
-  document.getElementById('dateBadge').textContent = today.toLocaleDateString('zh-CN', options);
+  document.getElementById('dateBadge').textContent = today.toLocaleDateString('en-US', options);
   const count = allPassages().length;
-  document.getElementById('readingStats').textContent = `鍏?${count} 绡?路 浠婃棩绗?${selectedPassageId} 绡嘸;
+  document.getElementById('readingStats').textContent = count + ' articles in collection';
 }
 
 // ==================== THEME ====================
@@ -390,7 +360,7 @@ function toggleTheme() {
 function switchTab(tab) {
   currentTab = tab;
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
+  document.querySelector('.tab[data-tab="' + tab + '"]').classList.add('active');
   document.getElementById('todaySection').style.display = tab === 'today' ? 'block' : 'none';
   document.getElementById('archiveSection').classList.toggle('show', tab === 'archive');
   if (tab === 'archive') renderArchive();
@@ -404,35 +374,24 @@ function findPassageById(id) {
 function renderToday() {
   const passage = findPassageById(selectedPassageId) || allPassages()[0];
   if (!passage) {
-    document.getElementById('todayPassage').innerHTML = '<div class="no-results">鏆傛棤鏂囩珷</div>';
+    document.getElementById('todayPassage').innerHTML = '<div class="no-results">No articles available.</div>';
     return;
   }
   updateDateBadge();
 
-  const words = passage.en.split(/(\s+)/g);
+  const words = (passage.en || '').split(/(\s+)/g);
   const wordElements = words.map(token => {
     if (/^\s+$/.test(token)) return token;
-    const cleaned = token.replace(/[^a-zA-Z'-]/g, '').toLowerCase();
-    if (cleaned.length <= 1) return token;
     const wordOnly = token.replace(/[^a-zA-Z'-]/g, '');
-    return `<span class="word" data-word="${wordOnly.toLowerCase()}" onclick="lookupWord(event,'${wordOnly.toLowerCase().replace(/'/g,"\\'")}')">${token}</span>`;
+    if (wordOnly.length <= 1) return token;
+    return '<span class="word" data-word="' + wordOnly.toLowerCase() + '" onclick="lookupWord(event,\'' + wordOnly.toLowerCase().replace(/'/g,"\\'") + '\')">' + token + '</span>';
   }).join('');
 
-  const html = `
-    <div class="passage-card">
-      <h2>${escapeHtml(passage.title)}</h2>
-      <div class="english-text" id="englishText">${wordElements}</div>
-      <div class="source-citation">&#8212; ${formatSource(passage.source)}</div>
-      <div class="translation-toggle">
-        <button class="toggle-btn ${showTranslation?'on':''}" onclick="toggleTranslation()">
-          ${showTranslation?'闅愯棌':'鏄剧ず'}涓枃缈昏瘧
-        </button>
-      </div>
-      <div class="translation-section ${showTranslation?'show':''}" id="translationSection">
-        <div class="chinese-text">${escapeHtml(passage.zh)}</div>
-      </div>
-    </div>
-  `;
+  const html = '<div class="passage-card">' +
+    '<h2>' + escapeHtml(passage.title) + '</h2>' +
+    '<div class="english-text" id="englishText">' + wordElements + '</div>' +
+    '<div class="source-citation">' + formatSource(passage.source) + '</div>' +
+    '</div>';
 
   document.getElementById('todayPassage').innerHTML = html;
 }
@@ -446,28 +405,13 @@ function escapeHtml(str) {
 
 function formatSource(source) {
   if (!source) return '';
-  // Extract URLs and make them clickable
   const urlMatch = source.match(/(https?:\/\/[^\s,]+)/);
-  let formatted = escapeHtml(source);
+  var formatted = escapeHtml(source);
   if (urlMatch) {
-    const url = urlMatch[0];
-    formatted = formatted.replace(
-      url,
-      `<a href="${url}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;">[鏌ョ湅鍘熸枃]</a>`
-    );
+    formatted = formatted.replace(urlMatch[0],
+      '<a href="' + urlMatch[0] + '" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;">[Read original]</a>');
   }
   return formatted;
-}
-
-function toggleTranslation() {
-  showTranslation = !showTranslation;
-  const section = document.getElementById('translationSection');
-  if (section) section.classList.toggle('show', showTranslation);
-  const btn = document.querySelector('.toggle-btn');
-  if (btn) {
-    btn.textContent = showTranslation ? '闅愯棌涓枃缈昏瘧' : '鏄剧ず涓枃缈昏瘧';
-    btn.classList.toggle('on', showTranslation);
-  }
 }
 
 // ==================== WORD LOOKUP ====================
@@ -490,7 +434,7 @@ async function lookupWord(event, word) {
   tooltip.style.left = left + 'px';
   tooltip.style.top = top + 'px';
   tooltip.style.display = 'block';
-  tooltip.innerHTML = `<div class="word-head">${word}</div><div class="loading"><span class="loading-dot">.</span><span class="loading-dot">.</span><span class="loading-dot">.</span> 鏌ヨ涓?/div>`;
+  tooltip.innerHTML = '<div class="word-head">' + word + '</div><div class="loading"><span class="loading-dot">.</span><span class="loading-dot">.</span><span class="loading-dot">.</span> Looking up</div>';
 
   if (lookupCache[word]) {
     tooltip.innerHTML = lookupCache[word];
@@ -499,29 +443,29 @@ async function lookupWord(event, word) {
   }
 
   try {
-    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+    const res = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word));
     if (!res.ok) throw new Error('Not found');
     const data = await res.json();
     const entry = data[0];
-    let html = `<div class="word-head">${entry.word}</div>`;
+    let html = '<div class="word-head">' + entry.word + '</div>';
     const phonetic = entry.phonetics && entry.phonetics[0];
-    if (phonetic && phonetic.text) html += `<div class="phonetic">${phonetic.text}</div>`;
-    else if (entry.phonetic) html += `<div class="phonetic">/${entry.phonetic.replace(/^\//,'').replace(/\/$/,'')}/</div>`;
+    if (phonetic && phonetic.text) html += '<div class="phonetic">' + phonetic.text + '</div>';
+    else if (entry.phonetic) html += '<div class="phonetic">/' + entry.phonetic.replace(/^\//,'').replace(/\/$/,'') + '/</div>';
 
     let count = 0;
     for (const m of entry.meanings) {
       if (count >= 3) break;
-      html += `<div style="color:var(--accent);font-size:0.75rem;margin-top:4px;">${m.partOfSpeech}</div>`;
+      html += '<div style="color:#c9975a;font-size:0.75rem;margin-top:4px;">' + m.partOfSpeech + '</div>';
       for (const d of m.definitions) {
         if (count >= 3) break;
-        html += `<div class="def"><strong>${count+1}.</strong> ${d.definition}</div>`;
+        html += '<div class="def"><strong>' + (count+1) + '.</strong> ' + d.definition + '</div>';
         count++;
       }
     }
     lookupCache[word] = html;
     tooltip.innerHTML = html;
   } catch (err) {
-    lookupCache[word] = `<div class="word-head">${word}</div><div style="color:var(--text-secondary);font-size:0.8rem;">鏈壘鍒伴噴涔?/div>`;
+    lookupCache[word] = '<div class="word-head">' + word + '</div><div style="color:var(--text-secondary);font-size:0.8rem;">Definition not found</div>';
     tooltip.innerHTML = lookupCache[word];
   }
 
@@ -547,51 +491,37 @@ document.addEventListener('click', (e) => {
 // ==================== ARCHIVE ====================
 function renderArchive() {
   const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
-  const dateFilter = document.getElementById('dateFilter').value;
   const list = document.getElementById('archiveList');
   let filtered = [...allPassages()];
 
   if (searchTerm) {
     filtered = filtered.filter(p =>
-      (p.title && p.title.toLowerCase().includes(searchTerm)) ||
-      (p.en && p.en.toLowerCase().includes(searchTerm)) ||
-      (p.zh && p.zh.includes(searchTerm)) ||
-      (p.source && p.source.toLowerCase().includes(searchTerm)) ||
-      (p.tags && p.tags.some(t => t.toLowerCase().includes(searchTerm)))
+      (p.title && p.title.toLowerCase().indexOf(searchTerm) !== -1) ||
+      (p.en && p.en.toLowerCase().indexOf(searchTerm) !== -1) ||
+      (p.source && p.source.toLowerCase().indexOf(searchTerm) !== -1) ||
+      (p.tags && p.tags.some(t => t.toLowerCase().indexOf(searchTerm) !== -1))
     );
   }
 
-  if (dateFilter) {
-    filtered = filtered.filter(p => {
-      if (!p.created_at) return false;
-      const d = new Date(p.created_at).toISOString().split('T')[0];
-      return d === dateFilter;
-    });
-  }
-
   if (filtered.length === 0) {
-    list.innerHTML = '<div class="no-results">娌℃湁鎵惧埌鍖归厤鐨勬枃绔?/div>';
+    list.innerHTML = '<div class="no-results">No matching articles found.</div>';
     return;
   }
 
   list.innerHTML = filtered.map(p => {
     const d = p.created_at ? new Date(p.created_at) : new Date();
-    const dateStr = d.toLocaleDateString('zh-CN', { year:'numeric', month:'long', day:'numeric' });
-    const preview = (p.en || '').replace(/\s+/g,' ').substring(0, 120) + '...';
+    const dateStr = d.toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+    const preview = (p.en || '').replace(/\s+/g,' ').substring(0, 140) + '...';
     const tags = p.tags && Array.isArray(p.tags) ? p.tags : [];
-    const srcPreview = (p.source || '').substring(0, 80) + '...';
+    const srcPreview = (p.source || '').substring(0, 80);
 
-    return `
-      <div class="archive-item" onclick="openPassage(${p.id})">
-        <div class="archive-date">${dateStr}</div>
-        <div class="archive-title">${escapeHtml(p.title)}</div>
-        <div class="archive-preview">${escapeHtml(preview)}</div>
-        <div class="archive-tags">
-          ${tags.map(t => `<span class="archive-tag">${escapeHtml(t)}</span>`).join('')}
-        </div>
-        <div class="archive-source">${escapeHtml(srcPreview)}</div>
-      </div>
-    `;
+    return '<div class="archive-item" onclick="openPassage(' + p.id + ')">' +
+      '<div class="archive-date">' + dateStr + '</div>' +
+      '<div class="archive-title">' + escapeHtml(p.title) + '</div>' +
+      '<div class="archive-preview">' + escapeHtml(preview) + '</div>' +
+      '<div class="archive-tags">' + tags.map(t => '<span class="archive-tag">' + escapeHtml(t) + '</span>').join('') + '</div>' +
+      '<div class="archive-source">' + escapeHtml(srcPreview) + '</div>' +
+      '</div>';
   }).join('');
 }
 
@@ -603,18 +533,15 @@ function openPassage(id) {
   const words = (passage.en || '').split(/(\s+)/g);
   const wordElements = words.map(token => {
     if (/^\s+$/.test(token)) return token;
-    const cleaned = token.replace(/[^a-zA-Z'-]/g, '').toLowerCase();
-    if (cleaned.length <= 1) return token;
     const wordOnly = token.replace(/[^a-zA-Z'-]/g, '');
-    return `<span class="word" data-word="${wordOnly.toLowerCase()}" onclick="lookupWord(event,'${wordOnly.toLowerCase().replace(/'/g,"\\'")}')">${token}</span>`;
+    if (wordOnly.length <= 1) return token;
+    return '<span class="word" data-word="' + wordOnly.toLowerCase() + '" onclick="lookupWord(event,\'' + wordOnly.toLowerCase().replace(/'/g,"\\'") + '\')">' + token + '</span>';
   }).join('');
 
-  document.getElementById('modalInner').innerHTML = `
-    <h2 style="color:var(--accent);font-weight:400;margin-bottom:20px;">${escapeHtml(passage.title)}</h2>
-    <div class="english-text">${wordElements}</div>
-    <div class="source-citation" style="margin-bottom:20px;">&#8212; ${formatSource(passage.source)}</div>
-    <div class="chinese-text">${escapeHtml(passage.zh)}</div>
-  `;
+  document.getElementById('modalInner').innerHTML =
+    '<h2 style="color:var(--accent);font-weight:400;margin-bottom:20px;">' + escapeHtml(passage.title) + '</h2>' +
+    '<div class="english-text">' + wordElements + '</div>' +
+    '<div class="source-citation" style="margin-bottom:20px;">' + formatSource(passage.source) + '</div>';
 
   document.getElementById('modalOverlay').classList.add('show');
   document.body.style.overflow = 'hidden';
