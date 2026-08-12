@@ -357,8 +357,12 @@ async function main() {
     .order('created_at', { ascending: false })
     .limit(100);
   if (!fetchErr && allPassages) {
-    writeFileSync('passages-data.json', JSON.stringify(allPassages, null, 2));
-    console.log('  Exported ' + allPassages.length + ' passages to passages-data.json');
+    var jsonStr = JSON.stringify(allPassages, null, 2);
+    writeFileSync('passages-data.json', jsonStr);
+    // Also embed as JS file (no fetch needed by frontend)
+    var jsStr = 'window.__PASSAGES__ = ' + JSON.stringify(allPassages) + ';';
+    writeFileSync('data.js', jsStr);
+    console.log('  Exported ' + allPassages.length + ' passages to passages-data.json and data.js');
   }
 }
 
