@@ -296,6 +296,7 @@ function updateDbStatus(online) {
 async function fetchPassages() {
   if (!supabase) {
     dbPassages = [];
+    await loadLocalData();
     return;
   }
   try {
@@ -311,11 +312,30 @@ async function fetchPassages() {
     console.warn('Fetch passages failed:', e.message);
     dbPassages = [];
     updateDbStatus(false);
+    await loadLocalData();
   }
 }
 
+async function loadLocalData() {
+  try {
+    const resp = await fetch('passages-data.json');
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data && data.length > 0) {
+        dbPassages = data;
+        updateDbStatus(true);
+        console.log('Loaded ' + data.length + ' passages from local data');
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn('Local data load failed:', e.message);
+  }
+  dbPassages = [];
+}
+
 function allPassages() {
-  return isOnline && dbPassages.length > 0 ? dbPassages : FALLBACK_PASSAGES;
+  return dbPassages.length > 0 ? dbPassages : FALLBACK_PASSAGES;
 }
 
 // ==================== APP STATE ====================
