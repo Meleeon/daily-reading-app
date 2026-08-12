@@ -337,21 +337,25 @@ function renderToday() {
   }
   updateDateBadge();
 
-  const words = (passage.en || '').split(/(\s+)/g);
-  const wordElements = words.map(token => {
-    if (/^\s+$/.test(token)) return token;
-    const wordOnly = token.replace(/[^a-zA-Z'-]/g, '');
-    if (wordOnly.length <= 1) return token;
-    return '<span class="word" data-word="' + wordOnly.toLowerCase() + '" onclick="lookupWord(event,\'' + wordOnly.toLowerCase().replace(/'/g,"\\'") + '\')">' + token + '</span>';
-  }).join('');
+  const titleWords = makeClickable(passage.title);
+  const bodyWords = makeClickable(passage.en || '');
 
   const html = '<div class="passage-card">' +
-    '<h2>' + escapeHtml(passage.title) + '</h2>' +
-    '<div class="english-text" id="englishText">' + wordElements + '</div>' +
+    '<h2>' + titleWords + '</h2>' +
+    '<div class="english-text" id="englishText">' + bodyWords + '</div>' +
     '<div class="source-citation">' + formatSource(passage.source) + '</div>' +
     '</div>';
 
   document.getElementById('todayPassage').innerHTML = html;
+}
+
+function makeClickable(text) {
+  return (text || '').split(/(\s+)/g).map(function(token) {
+    if (/^\s+$/.test(token)) return token;
+    var wordOnly = token.replace(/[^a-zA-Z'-]/g, '');
+    if (wordOnly.length <= 1) return token;
+    return '<span class="word" data-word="' + wordOnly.toLowerCase() + '" onclick="lookupWord(event,this.getAttribute(\'data-word\'))">' + token + '</span>';
+  }).join('');
 }
 
 function escapeHtml(str) {
@@ -376,23 +380,47 @@ function formatSource(source) {
 let tooltipTimeout = null;
 let lookupCache = {};
 
+function stemWord(word) {
+  // Basic stemming for better dictionary hits
+  var w = word.toLowerCase();
+  if (w.endsWith('ies') && w.length > 4) return w.slice(0, -3) + 'y';
+  if (w.endsWith('ves') && w.length > 4) return w.slice(0, -3) + 'f';
+  if (w.endsWith('es') && w.length > 4) return w.slice(0, -2);
+  if (w.endsWith('s') && !w.endsWith('ss') && w.length > 3) return w.slice(0, -1);
+  if (w.endsWith('ing') && w.length > 5) return w.slice(0, -3);
+  if (w.endsWith('ed') && w.length > 4) return w.slice(0, -2);
+  if (w.endsWith('er') && w.length > 4) return w.slice(0, -2);
+  if (w.endsWith('est') && w.length > 5) return w.slice(0, -3);
+  if (w.endsWith('ly') && w.length > 4) return w.slice(0, -2);
+  if (w.endsWith('tion') && w.length > 6) return w.slice(0, -4) + 'e';
+  if (w.endsWith('ment') && w.length > 6) return w.slice(0, -4);
+  if (w.endsWith('ness') && w.length > 6) return w.slice(0, -4);
+  if (w.endsWith('able') && w.length > 6) return w.slice(0, -4);
+  if (w.endsWith('ful') && w.length > 5) return w.slice(0, -3);
+  if (w.endsWith('less') && w.length > 6) return w.slice(0, -4);
+  if (w.endsWith('ous') && w.length > 5) return w.slice(0, -3);
+  if (w.endsWith('ive') && w.length > 5) return w.slice(0, -3);
+  if (w.endsWith('al') && w.length > 4) return w.slice(0, -2);
+  return word;
+}
+
 async function lookupWord(event, word) {
   event.stopPropagation();
-  const tooltip = document.getElementById('wordTooltip');
-  document.querySelectorAll('.word.active').forEach(w => w.classList.remove('active'));
+  var tooltip = document.getElementById('wordTooltip');
+  document.querySelectorAll('.word.active').forEach(function(w) { w.classList.remove('active'); });
   event.target.classList.add('active');
 
-  const rect = event.target.getBoundingClientRect();
-  let left = rect.left + rect.width / 2;
-  let top = rect.bottom + 8;
+  var rect = event.target.getBoundingClientRect();
+  var left = rect.left + rect.width / 2;
+  var top = rect.bottom + 8;
   if (left + 160 > window.innerWidth) left = window.innerWidth - 170;
   if (left < 10) left = 10;
-  if (top + 200 > window.innerHeight) top = rect.top - 200;
+  if (top + 250 > window.innerHeight) top = rect.top - 250;
 
   tooltip.style.left = left + 'px';
   tooltip.style.top = top + 'px';
   tooltip.style.display = 'block';
-  tooltip.innerHTML = '<div class="word-head">' + word + '</div><div class="loading"><span class="loading-dot">.</span><span class="loading-dot">.</span><span class="loading-dot">.</span> Looking up</div>';
+  tooltip.innerHTML = '<div class="word-head">' + word + '</div><div class="loading">Looking up...</div>';
 
   if (lookupCache[word]) {
     tooltip.innerHTML = lookupCache[word];
@@ -400,33 +428,73 @@ async function lookupWord(event, word) {
     return;
   }
 
-  try {
-    const res = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word));
-    if (!res.ok) throw new Error('Not found');
-    const data = await res.json();
-    const entry = data[0];
-    let html = '<div class="word-head">' + entry.word + '</div>';
-    const phonetic = entry.phonetics && entry.phonetics[0];
-    if (phonetic && phonetic.text) html += '<div class="phonetic">' + phonetic.text + '</div>';
-    else if (entry.phonetic) html += '<div class="phonetic">/' + entry.phonetic.replace(/^\//,'').replace(/\/$/,'') + '/</div>';
+  var html = '';
 
-    let count = 0;
-    for (const m of entry.meanings) {
-      if (count >= 3) break;
-      html += '<div style="color:#c9975a;font-size:0.75rem;margin-top:4px;">' + m.partOfSpeech + '</div>';
-      for (const d of m.definitions) {
-        if (count >= 3) break;
-        html += '<div class="def"><strong>' + (count+1) + '.</strong> ' + d.definition + '</div>';
-        count++;
+  // Step 1: Try MyMemory for Chinese translation
+  try {
+    var mmRes = await fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(word) + '&langpair=en|zh-CN');
+    if (mmRes.ok) {
+      var mmData = await mmRes.json();
+      if (mmData.responseData && mmData.responseData.translatedText && mmData.responseData.translatedText !== word.toUpperCase()) {
+        html += '<div class="word-head">' + word + '</div>';
+        html += '<div style="color:#c9975a;font-size:0.85rem;margin-top:4px;">' + mmData.responseData.translatedText + '</div>';
+        if (mmData.matches && mmData.matches.length > 0) {
+          html += '<div style="color:var(--text-secondary);font-size:0.7rem;margin-top:4px;">MyMemory</div>';
+        }
+        lookupCache[word] = html;
+        tooltip.innerHTML = html;
+        resetTooltipTimer();
+        return;
       }
     }
-    lookupCache[word] = html;
-    tooltip.innerHTML = html;
-  } catch (err) {
-    lookupCache[word] = '<div class="word-head">' + word + '</div><div style="color:var(--text-secondary);font-size:0.8rem;">Definition not found</div>';
-    tooltip.innerHTML = lookupCache[word];
+  } catch (e) { /* fall through */ }
+
+  // Step 2: Try Free Dictionary API for English definition
+  var wordsToTry = [word];
+  var stemmed = stemWord(word);
+  if (stemmed !== word) wordsToTry.push(stemmed);
+
+  for (var wi = 0; wi < wordsToTry.length; wi++) {
+    try {
+      var res = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(wordsToTry[wi]));
+      if (!res.ok) continue;
+      var data = await res.json();
+      var entry = data[0];
+      html = '<div class="word-head">' + entry.word + '</div>';
+      var phonetic = entry.phonetics && entry.phonetics[0];
+      if (phonetic && phonetic.text) html += '<div class="phonetic">' + phonetic.text + '</div>';
+      else if (entry.phonetic) html += '<div class="phonetic">/' + entry.phonetic.replace(/^\//,'').replace(/\/$/,'') + '/</div>';
+
+      var count = 0;
+      for (var mi = 0; mi < entry.meanings.length; mi++) {
+        var m = entry.meanings[mi];
+        if (count >= 3) break;
+        html += '<div style="color:#c9975a;font-size:0.75rem;margin-top:4px;">' + m.partOfSpeech + '</div>';
+        for (var di = 0; di < m.definitions.length; di++) {
+          if (count >= 3) break;
+          var def = m.definitions[di];
+          // Try to get Chinese translation for this definition if available
+          html += '<div class="def"><strong>' + (count+1) + '.</strong> ' + def.definition;
+          if (def.example) html += '<br><span style="color:var(--text-secondary);font-size:0.75rem;">"' + def.example + '"</span>';
+          html += '</div>';
+          count++;
+        }
+      }
+      if (stemmed !== word && wordsToTry[wi] === stemmed) {
+        html += '<div style="color:var(--text-secondary);font-size:0.7rem;margin-top:4px;">(stemmed from "' + word + '")</div>';
+      }
+      lookupCache[word] = html;
+      tooltip.innerHTML = html;
+      resetTooltipTimer();
+      return;
+    } catch (e) { /* try next */ }
   }
 
+  // Step 3: Nothing found
+  html = '<div class="word-head">' + word + '</div>';
+  html += '<div style="color:var(--text-secondary);font-size:0.8rem;">No definition found</div>';
+  lookupCache[word] = html;
+  tooltip.innerHTML = html;
   resetTooltipTimer();
 }
 
@@ -488,17 +556,12 @@ function openPassage(id) {
   const passage = findPassageById(id);
   if (!passage) return;
 
-  const words = (passage.en || '').split(/(\s+)/g);
-  const wordElements = words.map(token => {
-    if (/^\s+$/.test(token)) return token;
-    const wordOnly = token.replace(/[^a-zA-Z'-]/g, '');
-    if (wordOnly.length <= 1) return token;
-    return '<span class="word" data-word="' + wordOnly.toLowerCase() + '" onclick="lookupWord(event,\'' + wordOnly.toLowerCase().replace(/'/g,"\\'") + '\')">' + token + '</span>';
-  }).join('');
+  var titleHtml = makeClickable(passage.title);
+  var bodyHtml = makeClickable(passage.en || '');
 
   document.getElementById('modalInner').innerHTML =
-    '<h2 style="color:var(--accent);font-weight:400;margin-bottom:20px;">' + escapeHtml(passage.title) + '</h2>' +
-    '<div class="english-text">' + wordElements + '</div>' +
+    '<h2 style="color:var(--accent);font-weight:400;margin-bottom:20px;">' + titleHtml + '</h2>' +
+    '<div class="english-text">' + bodyHtml + '</div>' +
     '<div class="source-citation" style="margin-bottom:20px;">' + formatSource(passage.source) + '</div>';
 
   document.getElementById('modalOverlay').classList.add('show');
