@@ -115,64 +115,63 @@ body {
   margin-bottom:12px; padding-left:14px; border-left:2px solid var(--accent-light);
 }
 .timeline {
-  position:fixed; left:max(28px, calc(50% - 545px));
+  position:fixed; left:max(28px, calc(50% - 590px));
   top:50%; transform:translateY(-50%);
-  z-index:900; display:flex; flex-direction:column; align-items:center;
-  max-height:78vh; overflow-y:auto; scrollbar-width:none;
-  scroll-behavior:smooth;
+  z-index:900; display:flex; flex-direction:column; align-items:flex-end;
+  max-height:78vh;
   opacity:0; animation:timelineIn 0.9s cubic-bezier(0.22,1,0.36,1) 0.15s forwards;
-  -ms-overflow-style:none;
-}
-.timeline::-webkit-scrollbar { display:none; }
-@keyframes timelineIn {
-  from { opacity:0; transform:translateY(-50%) translateX(-18px); }
-  to { opacity:1; transform:translateY(-50%) translateX(0); }
 }
 .timeline-year {
   font-size:0.78rem; color:var(--accent); letter-spacing:0.12em;
-  font-weight:600; margin-bottom:12px;
-  position:sticky; top:0; background:var(--bg); padding:2px 0; z-index:2;
+  font-weight:600; margin-bottom:10px;
+  background:var(--bg); padding:2px 6px; border-radius:4px; z-index:2;
   opacity:0; animation:yearIn 0.6s cubic-bezier(0.22,1,0.36,1) 0.5s forwards;
 }
 @keyframes yearIn {
   from { opacity:0; transform:translateY(-10px); }
   to { opacity:1; transform:translateY(0); }
 }
-.timeline-line {
-  position:relative; display:flex; flex-direction:column; align-items:center;
+.timeline-scroll {
+  position:relative;
+  overflow-y:auto; max-height:calc(78vh - 40px);
+  scrollbar-width:none; -ms-overflow-style:none;
+  scroll-behavior:smooth;
+  padding:4px 0;
 }
-.timeline-line::before {
-  content:''; position:absolute; top:0; bottom:0; left:50%;
-  width:1.5px; background:var(--border); transform:translateX(-50%);
-  z-index:0; border-radius:1px;
+.timeline-scroll::-webkit-scrollbar { display:none; }
+.timeline-scroll::before {
+  content:''; position:absolute; right:5px; top:8px; bottom:8px;
+  width:1.5px; background:var(--border); border-radius:1px;
+  transform:translateX(50%);
 }
+.timeline-row {
+  position:relative; display:flex; align-items:center; justify-content:flex-end;
+  gap:12px; cursor:pointer; padding:4px 0;
+}
+.timeline-date-label {
+  font-size:0.72rem; color:var(--text-secondary); white-space:nowrap;
+  font-weight:600; pointer-events:none;
+  transition:color 0.25s ease;
+}
+.timeline-row:hover .timeline-date-label { color:var(--accent); }
 .timeline-item {
-  position:relative; width:12px; height:12px; min-height:12px; border-radius:50%;
+  position:relative; width:12px; height:12px; border-radius:50%;
+  flex-shrink:0;
   background:var(--card-bg); border:2px solid var(--border); cursor:pointer;
-  z-index:1; margin:7px 0;
+  z-index:1;
   transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1),
              background 0.25s ease,
              border-color 0.25s ease,
              box-shadow 0.35s cubic-bezier(0.22,1,0.36,1);
 }
 .timeline-item.has-article { border-color:var(--accent); background:var(--accent); }
-.timeline-item:hover {
+.timeline-row:hover .timeline-item {
   transform:scale(1.7);
   background:var(--accent);
   box-shadow:0 0 0 5px var(--accent-light);
 }
 .timeline-item.active { box-shadow:0 0 0 5px var(--accent-light); }
-.timeline-item:active { transform:scale(1.3); }
-.timeline-date-label {
-  position:absolute; right:24px; top:50%;
-  font-size:0.72rem; color:var(--text-secondary); white-space:nowrap;
-  font-weight:600; pointer-events:none;
-  transform:translateY(-50%);
-  transition:color 0.25s ease;
-}
-.timeline-item:hover .timeline-date-label {
-  color:var(--accent);
-}
+.timeline-row:active .timeline-item { transform:scale(1.3); }
 .timeline-article-card {
   position:fixed; z-index:950; pointer-events:none;
   perspective:900px;
@@ -880,27 +879,27 @@ function renderTimeline() {
 
   var year = new Date().getFullYear();
   var html = '<div class="timeline-year">' + year + '</div>';
-  html += '<div class="timeline-line">';
+  html += '<div class="timeline-scroll">';
   for (var i = 0; i < dateMap.length; i++) {
     var entry = dateMap[i];
     var dateStr = entry.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     var isToday = entry.date.toDateString() === todayStr;
     var activeClass = entry.article.id === selectedPassageId ? ' active' : '';
-    html += '<div class="timeline-item has-article' + activeClass + '" data-id="' + entry.article.id + '" onmouseenter="showTimelineTooltip(event,' + entry.article.id + ')" onmouseleave="hideTimelineTooltip()" onclick="openPassage(' + entry.article.id + ')">' +
+    html += '<div class="timeline-row" data-id="' + entry.article.id + '" onmouseenter="showTimelineTooltip(this,' + entry.article.id + ')" onmouseleave="hideTimelineTooltip()" onclick="openPassage(' + entry.article.id + ')">' +
       '<span class="timeline-date-label">' + dateStr + '</span>' +
+      '<span class="timeline-item has-article' + activeClass + '"></span>' +
       '</div>';
   }
   html += '</div>';
   container.innerHTML = html;
 }
 
-let tooltipShowDelay = null;
-
-function showTimelineTooltip(event, articleId) {
+function showTimelineTooltip(rowEl, articleId) {
   var article = findPassageById(articleId);
   if (!article) return;
   var card = document.getElementById('timelineCard');
-  var rect = event.target.getBoundingClientRect();
+  var dot = rowEl.querySelector('.timeline-item');
+  var rect = dot.getBoundingClientRect();
   var d = new Date(article.created_at);
 
   document.getElementById('cardTitle').textContent = article.title;
