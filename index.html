@@ -333,9 +333,12 @@ function init() {
   // Use embedded data directly - no external dependencies
   document.getElementById('dbStatus').innerHTML = '<span class="status-dot online"></span>' + DB_PASSAGES.length + ' articles';
 
-  const today = new Date();
-  const dayIndex = Math.floor((today - START_DATE) / (1000 * 60 * 60 * 24));
-  selectedPassageId = (Math.abs(dayIndex) % DB_PASSAGES.length) + 1;
+  // Today's article = the most recent one in the collection
+  var latest = DB_PASSAGES[0];
+  for (var i = 1; i < DB_PASSAGES.length; i++) {
+    if (new Date(DB_PASSAGES[i].created_at) > new Date(latest.created_at)) latest = DB_PASSAGES[i];
+  }
+  selectedPassageId = latest.id;
 
   renderToday();
   renderArchive();
@@ -766,9 +769,10 @@ document.addEventListener('keydown', (e) => {
 
 // ==================== TIMELINE ====================
 function buildDateMap() {
-  // Map each article to a date, distributing articles across consecutive days
-  // Sort by id (creation order), assign latest article to today
-  var sorted = [...DB_PASSAGES].sort(function(a, b) { return a.id - b.id; });
+  // Sort articles by created_at, map each to a consecutive day ending today
+  var sorted = [...DB_PASSAGES].sort(function(a, b) {
+    return new Date(a.created_at) - new Date(b.created_at);
+  });
   var map = [];
   var today = new Date();
   for (var i = 0; i < sorted.length; i++) {
