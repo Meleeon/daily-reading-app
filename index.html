@@ -177,8 +177,7 @@ body {
 .timeline-item.active { box-shadow:0 0 0 5px var(--accent-light); }
 .timeline-row:active .timeline-item { transform:scale(1.3); }
 .timeline-article-card {
-  position:fixed; z-index:950; pointer-events:none;
-  perspective:900px;
+  position:fixed; z-index:3000; pointer-events:none;
   opacity:0; visibility:hidden;
   transition:opacity 0.18s ease, visibility 0.18s ease;
 }
@@ -188,14 +187,17 @@ body {
   border:1px solid var(--border);
   border-radius:12px;
   padding:14px 18px;
+  max-width:300px;
   box-shadow:0 14px 44px rgba(0,0,0,0.2);
   transform-origin:left center;
-  transform:rotateY(88deg) translateX(-12px);
-  transition:transform 0.5s cubic-bezier(0.22,1,0.36,1);
+  transform:perspective(900px) rotateY(72deg) translateX(-14px);
+  backface-visibility:hidden;
+  will-change:transform;
+  transition:transform 0.55s cubic-bezier(0.22,1,0.36,1);
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 }
 .timeline-article-card.show .card-inner {
-  transform:rotateY(0deg) translateX(0);
+  transform:perspective(900px) rotateY(0deg) translateX(0);
 }
 .card-title {
   font-size:0.85rem; font-weight:600; line-height:1.35;
