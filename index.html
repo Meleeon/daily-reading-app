@@ -490,7 +490,7 @@ function hideBilingual() {
     btn.classList.remove('on');
   }
   var bc = document.getElementById('bilingualContainer');
-  if (bc) bc.classList.remove('show');
+  if (bc) bc.innerHTML = '';
   var et = document.getElementById('englishText');
   if (et) et.style.display = '';
 }
@@ -575,6 +575,22 @@ async function lookupWord(event, word) {
   }
 
   var html = '';
+
+  // Step 0: Try Immersive Translate extension (user-installed)
+  try {
+    if (window.immersiveTranslate && typeof window.immersiveTranslate.translateText === 'function') {
+      var imText = await window.immersiveTranslate.translateText(word);
+      if (imText && imText !== word) {
+        html += '<div class="word-head">' + word + '</div>';
+        html += '<div style="color:#c9975a;font-size:0.9rem;margin-top:4px;line-height:1.5;">' + imText + '</div>';
+        html += '<div style="color:var(--text-secondary);font-size:0.68rem;margin-top:4px;">Immersive Translate</div>';
+        lookupCache[word] = html;
+        tooltip.innerHTML = html;
+        resetTooltipTimer();
+        return;
+      }
+    }
+  } catch (e) { /* fall through */ }
 
   // Step 1: Try MyMemory for Chinese translation
   try {
