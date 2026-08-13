@@ -95,6 +95,52 @@ body {
   font-size:0.82rem; color:var(--text-secondary); font-style:italic;
   padding-top:14px; border-top:1px solid var(--border);
 }
+.translate-toggle { display:flex; gap:10px; align-items:center; margin-top:16px; }
+.toggle-btn {
+  background:none; border:1px solid var(--border); color:var(--text-secondary);
+  padding:7px 18px; border-radius:20px; cursor:pointer; font-size:0.82rem;
+  font-family:inherit; transition:all 0.2s;
+}
+.toggle-btn:hover { border-color:var(--accent); color:var(--accent); }
+.toggle-btn.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+.bilingual-text { margin-top:18px; display:none; }
+.bilingual-text.show { display:block; }
+.en-line {
+  font-family:'Georgia','Times New Roman',serif;
+  font-size:1.05rem; line-height:1.5; color:var(--text);
+  margin-bottom:4px; text-align:justify;
+}
+.zh-line {
+  font-size:0.95rem; line-height:1.5; color:var(--text-secondary);
+  margin-bottom:12px; padding-left:14px; border-left:2px solid var(--accent-light);
+}
+.timeline {
+  position:fixed; left:14px; top:50%; transform:translateY(-50%);
+  display:flex; flex-direction:column; align-items:flex-end; gap:2px;
+  max-height:78vh; overflow-y:auto; z-index:900;
+  padding-right:8px; scrollbar-width:thin;
+}
+.timeline-item {
+  position:relative; width:9px; height:9px; min-height:9px; border-radius:50%;
+  background:var(--border); cursor:pointer; transition:all 0.15s;
+}
+.timeline-item.has-article { background:var(--accent); width:11px; height:11px; }
+.timeline-item:hover { transform:scale(1.8); background:var(--accent); }
+.timeline-item.active { background:var(--accent); box-shadow:0 0 0 3px var(--accent-light); }
+.timeline-date-label {
+  position:absolute; right:20px; top:50%; transform:translateY(-50%);
+  font-size:0.68rem; color:var(--text-secondary); white-space:nowrap;
+  display:none; background:var(--card-bg); padding:2px 8px; border-radius:4px;
+  border:1px solid var(--border);
+}
+.timeline-item:hover .timeline-date-label { display:block; }
+.timeline-title-tooltip {
+  position:fixed; z-index:950; background:var(--tooltip-bg); color:var(--tooltip-text);
+  padding:10px 14px; border-radius:8px; font-size:0.8rem; max-width:260px;
+  box-shadow:0 6px 20px rgba(0,0,0,0.25); display:none; line-height:1.4;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+@media (max-width:900px) { .timeline { display:none; } }
 .word-tooltip {
   position:fixed; z-index:1000; background:var(--tooltip-bg); color:var(--tooltip-text);
   padding:14px 18px; border-radius:10px; font-size:0.88rem; max-width:320px;
@@ -172,6 +218,9 @@ body {
 </style>
 </head>
 <body>
+
+<div class="timeline" id="timeline"></div>
+<div class="timeline-title-tooltip" id="timelineTooltip"></div>
 
 <div class="container">
 
@@ -343,10 +392,31 @@ function renderToday() {
   const html = '<div class="passage-card">' +
     '<h2>' + titleWords + '</h2>' +
     '<div class="english-text" id="englishText">' + bodyWords + '</div>' +
+    '<div id="bilingualContainer"></div>' +
+    '<div class="translate-toggle">' +
+      '<button class="toggle-btn" id="translateBtn" onclick="toggleFullTranslation(' + passage.id + ')">鍏ㄦ枃缈昏瘧</button>' +
+    '</div>' +
     '<div class="source-citation">' + formatSource(passage.source) + '</div>' +
     '</div>';
 
   document.getElementById('todayPassage').innerHTML = html;
+  hideBilingual();
+}
+
+let currentArticleId = null;
+let currentBilingual = false;
+
+function hideBilingual() {
+  currentBilingual = false;
+  var btn = document.getElementById('translateBtn');
+  if (btn) {
+    btn.textContent = '鍏ㄦ枃缈昏瘧';
+    btn.classList.remove('on');
+  }
+  var bc = document.getElementById('bilingualContainer');
+  if (bc) bc.classList.remove('show');
+  var et = document.getElementById('englishText');
+  if (et) et.style.display = '';
 }
 
 function makeClickable(text) {
@@ -506,6 +576,118 @@ function resetTooltipTimer() {
   }, 8000);
 }
 
+// ==================== FULL TEXT TRANSLATION ====================
+function splitSentences(text) {
+  var cleaned = text.replace(/\s+/g, ' ').trim();
+  var sentences = cleaned.match(/[^.!?]+[.!?]+["']?|\S+$/g) || [];
+  var result = [];
+  var buffer = '';
+  for (var i = 0; i < sentences.length; i++) {
+    var s = sentences[i].trim();
+    if (buffer.length + s.length < 480) {
+      buffer += (buffer ? ' ' : '') + s;
+    } else {
+      if (buffer) result.push(buffer);
+      buffer = s;
+    }
+  }
+  if (buffer) result.push(buffer);
+  return result;
+}
+
+async function toggleFullTranslation(passageId) {
+  currentArticleId = passageId;
+  var btn = document.getElementById('translateBtn');
+  var bc = document.getElementById('bilingualContainer');
+  var et = document.getElementById('englishText');
+
+  // If currently showing bilingual, hide it
+  if (currentBilingual) {
+    hideBilingual();
+    return;
+  }
+
+  // Show loading state
+  btn.textContent = '缈昏瘧涓?..';
+  btn.classList.add('on');
+  bc.classList.add('show');
+  bc.innerHTML = '<div class="loading-indicator"><div class="spinner"></div><div style="margin-top:10px;font-size:0.85rem;">Translating...</div></div>';
+
+  var passage = findPassageById(passageId);
+  if (!passage) {
+    btn.textContent = '鍏ㄦ枃缈昏瘧';
+    return;
+  }
+
+  var cacheKey = 'translation-' + passageId;
+  var cached = null;
+  try { cached = JSON.parse(localStorage.getItem(cacheKey) || 'null'); } catch(e) {}
+
+  if (cached && cached.sentences && cached.sentences.length > 0) {
+    renderBilingual(passage, cached.sentences);
+    btn.textContent = '鏀惰捣缈昏瘧';
+    currentBilingual = true;
+    return;
+  }
+
+  var sentences = splitSentences(passage.en || '');
+  var translated = [];
+  var failed = 0;
+
+  for (var i = 0; i < sentences.length; i++) {
+    try {
+      var url = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(sentences[i]) + '&langpair=en|zh-CN';
+      var res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var data = await res.json();
+      var zh = data.responseData && data.responseData.translatedText;
+      if (zh && zh !== sentences[i]) {
+        translated.push(zh);
+      } else {
+        translated.push('');
+        failed++;
+      }
+    } catch (e) {
+      translated.push('');
+      failed++;
+    }
+  }
+
+  // Cache result
+  try {
+    localStorage.setItem(cacheKey, JSON.stringify({ sentences: translated, en: sentences }));
+  } catch(e) {}
+
+  if (failed === sentences.length) {
+    bc.innerHTML = '<div class="no-results" style="font-size:0.85rem;">Translation unavailable. Please try again later.</div>';
+    btn.textContent = '鍏ㄦ枃缈昏瘧';
+    btn.classList.remove('on');
+    currentBilingual = false;
+    return;
+  }
+
+  renderBilingual(passage, translated, sentences);
+  btn.textContent = '鏀惰捣缈昏瘧';
+  currentBilingual = true;
+}
+
+function renderBilingual(passage, zhLines, enLines) {
+  var bc = document.getElementById('bilingualContainer');
+  var et = document.getElementById('englishText');
+  if (et) et.style.display = 'none';
+
+  var html = '<div class="bilingual-text show">';
+  var enSentences = enLines || splitSentences(passage.en || '');
+  for (var i = 0; i < enSentences.length; i++) {
+    var enClickable = makeClickable(enSentences[i]);
+    var zh = zhLines[i] || '';
+    html += '<p class="en-line">' + enClickable + '</p>';
+    if (zh) html += '<p class="zh-line">' + zh + '</p>';
+  }
+  html += '</div>';
+  bc.innerHTML = html;
+}
+
 document.addEventListener('click', (e) => {
   if (!e.target.classList.contains('word')) {
     document.getElementById('wordTooltip').style.display = 'none';
@@ -582,8 +764,62 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeModalDirect();
 });
 
+// ==================== TIMELINE ====================
+function buildDateMap() {
+  // Map each article to a date, distributing articles across consecutive days
+  // Sort by id (creation order), assign latest article to today
+  var sorted = [...DB_PASSAGES].sort(function(a, b) { return a.id - b.id; });
+  var map = [];
+  var today = new Date();
+  for (var i = 0; i < sorted.length; i++) {
+    var d = new Date(today);
+    d.setDate(d.getDate() - (sorted.length - 1 - i));
+    map.push({ date: d, article: sorted[i] });
+  }
+  return map;
+}
+
+function renderTimeline() {
+  var container = document.getElementById('timeline');
+  if (!container) return;
+  var dateMap = buildDateMap();
+  var todayStr = new Date().toDateString();
+
+  var html = '';
+  for (var i = 0; i < dateMap.length; i++) {
+    var entry = dateMap[i];
+    var dateStr = entry.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    var isToday = entry.date.toDateString() === todayStr;
+    var activeClass = entry.article.id === selectedPassageId ? ' active' : '';
+    html += '<div class="timeline-item has-article' + activeClass + '" data-id="' + entry.article.id + '" onmouseenter="showTimelineTooltip(event,' + entry.article.id + ')" onmouseleave="hideTimelineTooltip()" onclick="openPassage(' + entry.article.id + ')">' +
+      '<span class="timeline-date-label">' + dateStr + (isToday ? ' (today)' : '') + '</span>' +
+      '</div>';
+  }
+  container.innerHTML = html;
+}
+
+function showTimelineTooltip(event, articleId) {
+  var article = findPassageById(articleId);
+  if (!article) return;
+  var tip = document.getElementById('timelineTooltip');
+  var rect = event.target.getBoundingClientRect();
+  tip.innerHTML = '<strong>' + escapeHtml(article.title) + '</strong><br>' +
+    '<span style="font-size:0.72rem;opacity:0.8;">' + (article.word_count || '') + ' words</span>';
+  tip.style.display = 'block';
+  var tipLeft = rect.right + 12;
+  var tipTop = rect.top + rect.height / 2;
+  if (tipLeft + 280 > window.innerWidth) tipLeft = rect.right - 300;
+  tip.style.left = tipLeft + 'px';
+  tip.style.top = (tipTop - 20) + 'px';
+}
+
+function hideTimelineTooltip() {
+  document.getElementById('timelineTooltip').style.display = 'none';
+}
+
 // ==================== START ====================
 init();
+renderTimeline();
 </script>
 
 </body>
