@@ -115,28 +115,41 @@ body {
   margin-bottom:12px; padding-left:14px; border-left:2px solid var(--accent-light);
 }
 .timeline {
-  position:fixed; left:14px; top:50%; transform:translateY(-50%);
-  display:flex; flex-direction:column; align-items:flex-end; gap:2px;
-  max-height:78vh; overflow-y:auto; z-index:900;
-  padding-right:8px; scrollbar-width:thin;
+  position:fixed; left:22px; top:50%; transform:translateY(-50%);
+  z-index:900; display:flex; flex-direction:column; align-items:center;
+  max-height:78vh; overflow-y:auto; scrollbar-width:thin;
+}
+.timeline-year {
+  font-size:0.78rem; color:var(--accent); letter-spacing:0.08em;
+  font-weight:600; margin-bottom:10px; writing-mode:vertical-rl;
+  text-orientation:mixed; transform:rotate(180deg);
+  position:sticky; top:0; background:var(--bg); padding:4px 0; z-index:2;
+}
+.timeline-line {
+  position:relative; display:flex; flex-direction:column; align-items:center;
+}
+.timeline-line::before {
+  content:''; position:absolute; top:0; bottom:0; left:50%;
+  width:2px; background:var(--border); transform:translateX(-50%);
+  z-index:0;
 }
 .timeline-item {
-  position:relative; width:9px; height:9px; min-height:9px; border-radius:50%;
-  background:var(--border); cursor:pointer; transition:all 0.15s;
+  position:relative; width:14px; height:14px; min-height:14px; border-radius:50%;
+  background:var(--card-bg); border:2px solid var(--border); cursor:pointer;
+  transition:all 0.15s; z-index:1; margin:6px 0;
 }
-.timeline-item.has-article { background:var(--accent); width:11px; height:11px; }
-.timeline-item:hover { transform:scale(1.8); background:var(--accent); }
-.timeline-item.active { background:var(--accent); box-shadow:0 0 0 3px var(--accent-light); }
+.timeline-item.has-article { border-color:var(--accent); background:var(--accent); }
+.timeline-item:hover { transform:scale(1.5); box-shadow:0 0 0 4px var(--accent-light); }
+.timeline-item.active { box-shadow:0 0 0 4px var(--accent-light); }
 .timeline-date-label {
-  position:absolute; right:20px; top:50%; transform:translateY(-50%);
-  font-size:0.68rem; color:var(--text-secondary); white-space:nowrap;
-  display:none; background:var(--card-bg); padding:2px 8px; border-radius:4px;
-  border:1px solid var(--border);
+  position:absolute; left:22px; top:50%; transform:translateY(-50%);
+  font-size:0.7rem; color:var(--accent); white-space:nowrap;
+  display:none; font-weight:600;
 }
 .timeline-item:hover .timeline-date-label { display:block; }
 .timeline-title-tooltip {
   position:fixed; z-index:950; background:var(--tooltip-bg); color:var(--tooltip-text);
-  padding:10px 14px; border-radius:8px; font-size:0.8rem; max-width:260px;
+  padding:10px 14px; border-radius:8px; font-size:0.8rem; max-width:280px;
   box-shadow:0 6px 20px rgba(0,0,0,0.25); display:none; line-height:1.4;
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 }
@@ -397,7 +410,7 @@ function renderToday() {
     '<div class="english-text" id="englishText">' + bodyWords + '</div>' +
     '<div id="bilingualContainer"></div>' +
     '<div class="translate-toggle">' +
-      '<button class="toggle-btn" id="translateBtn" onclick="toggleFullTranslation(' + passage.id + ')">鍏ㄦ枃缈昏瘧</button>' +
+      '<button class="toggle-btn" id="translateBtn" onclick="toggleFullTranslation(' + passage.id + ')">Full Translation</button>' +
     '</div>' +
     '<div class="source-citation">' + formatSource(passage.source) + '</div>' +
     '</div>';
@@ -413,7 +426,7 @@ function hideBilingual() {
   currentBilingual = false;
   var btn = document.getElementById('translateBtn');
   if (btn) {
-    btn.textContent = '鍏ㄦ枃缈昏瘧';
+    btn.textContent = 'Full Translation';
     btn.classList.remove('on');
   }
   var bc = document.getElementById('bilingualContainer');
@@ -611,14 +624,14 @@ async function toggleFullTranslation(passageId) {
   }
 
   // Show loading state
-  btn.textContent = '缈昏瘧涓?..';
+  btn.textContent = 'Translating...';
   btn.classList.add('on');
   bc.classList.add('show');
   bc.innerHTML = '<div class="loading-indicator"><div class="spinner"></div><div style="margin-top:10px;font-size:0.85rem;">Translating...</div></div>';
 
   var passage = findPassageById(passageId);
   if (!passage) {
-    btn.textContent = '鍏ㄦ枃缈昏瘧';
+    btn.textContent = 'Full Translation';
     return;
   }
 
@@ -628,7 +641,7 @@ async function toggleFullTranslation(passageId) {
 
   if (cached && cached.sentences && cached.sentences.length > 0) {
     renderBilingual(passage, cached.sentences);
-    btn.textContent = '鏀惰捣缈昏瘧';
+    btn.textContent = 'Hide Translation';
     currentBilingual = true;
     return;
   }
@@ -663,14 +676,14 @@ async function toggleFullTranslation(passageId) {
 
   if (failed === sentences.length) {
     bc.innerHTML = '<div class="no-results" style="font-size:0.85rem;">Translation unavailable. Please try again later.</div>';
-    btn.textContent = '鍏ㄦ枃缈昏瘧';
+    btn.textContent = 'Full Translation';
     btn.classList.remove('on');
     currentBilingual = false;
     return;
   }
 
   renderBilingual(passage, translated, sentences);
-  btn.textContent = '鏀惰捣缈昏瘧';
+  btn.textContent = 'Hide Translation';
   currentBilingual = true;
 }
 
@@ -789,16 +802,19 @@ function renderTimeline() {
   var dateMap = buildDateMap();
   var todayStr = new Date().toDateString();
 
-  var html = '';
+  var year = new Date().getFullYear();
+  var html = '<div class="timeline-year">' + year + '</div>';
+  html += '<div class="timeline-line">';
   for (var i = 0; i < dateMap.length; i++) {
     var entry = dateMap[i];
     var dateStr = entry.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     var isToday = entry.date.toDateString() === todayStr;
     var activeClass = entry.article.id === selectedPassageId ? ' active' : '';
     html += '<div class="timeline-item has-article' + activeClass + '" data-id="' + entry.article.id + '" onmouseenter="showTimelineTooltip(event,' + entry.article.id + ')" onmouseleave="hideTimelineTooltip()" onclick="openPassage(' + entry.article.id + ')">' +
-      '<span class="timeline-date-label">' + dateStr + (isToday ? ' (today)' : '') + '</span>' +
+      '<span class="timeline-date-label">' + dateStr + '</span>' +
       '</div>';
   }
+  html += '</div>';
   container.innerHTML = html;
 }
 
@@ -807,14 +823,15 @@ function showTimelineTooltip(event, articleId) {
   if (!article) return;
   var tip = document.getElementById('timelineTooltip');
   var rect = event.target.getBoundingClientRect();
+  var d = new Date(article.created_at);
   tip.innerHTML = '<strong>' + escapeHtml(article.title) + '</strong><br>' +
-    '<span style="font-size:0.72rem;opacity:0.8;">' + (article.word_count || '') + ' words</span>';
+    '<span style="font-size:0.72rem;opacity:0.8;">' + d.toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' }) + ' | ' + (article.word_count || '') + ' words</span>';
   tip.style.display = 'block';
-  var tipLeft = rect.right + 12;
-  var tipTop = rect.top + rect.height / 2;
-  if (tipLeft + 280 > window.innerWidth) tipLeft = rect.right - 300;
+  var tipLeft = rect.right + 16;
+  var tipTop = rect.top + rect.height / 2 - 25;
+  if (tipLeft + 300 > window.innerWidth) tipLeft = rect.right - 316;
   tip.style.left = tipLeft + 'px';
-  tip.style.top = (tipTop - 20) + 'px';
+  tip.style.top = Math.max(10, tipTop) + 'px';
 }
 
 function hideTimelineTooltip() {
