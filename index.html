@@ -213,17 +213,84 @@ body {
   padding:1px 8px; border-radius:9px;
 }
 @media (max-width:1120px) { .timeline { display:none; } }
-.word-tooltip {
-  position:fixed; z-index:1000; background:var(--tooltip-bg); color:var(--tooltip-text);
-  padding:14px 18px; border-radius:10px; font-size:0.88rem; max-width:320px;
-  box-shadow:0 8px 30px rgba(0,0,0,0.25); display:none; line-height:1.5;
+.word-panel {
+  position:fixed; right:0; top:72px;
+  width:330px; max-height:calc(100vh - 100px);
+  overflow-y:auto;
+  background:var(--card-bg);
+  border:1px solid var(--border);
+  border-right:none;
+  border-radius:14px 0 0 14px;
+  box-shadow:-8px 4px 40px rgba(0,0,0,0.18);
+  z-index:2600;
+  transform:translateX(105%);
+  transition:transform 0.45s cubic-bezier(0.22,1,0.36,1);
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  padding:0;
 }
-.word-tooltip .word-head { font-size:1.1rem; font-weight:600; margin-bottom:6px; }
-.word-tooltip .phonetic { color:#c9975a; font-size:0.8rem; margin-bottom:6px; }
-.word-tooltip .def { margin-bottom:4px; }
-.word-tooltip .def strong { color:#c9975a; }
-.word-tooltip .loading { opacity:0.7; font-style:italic; }
+.word-panel.show { transform:translateX(0); }
+.wp-header {
+  display:flex; justify-content:space-between; align-items:flex-start;
+  padding:20px 22px 14px; border-bottom:1px solid var(--border);
+  position:sticky; top:0; background:var(--card-bg); z-index:2;
+}
+.wp-word {
+  font-family:'Georgia','Times New Roman',serif;
+  font-size:1.5rem; font-weight:700; color:var(--text);
+}
+.wp-phonetic {
+  font-size:0.85rem; color:var(--accent); margin-top:2px;
+}
+.wp-close {
+  background:none; border:none; font-size:1.3rem; cursor:pointer;
+  color:var(--text-secondary); line-height:1; padding:4px;
+}
+.wp-close:hover { color:var(--text); }
+.wp-body { padding:16px 22px 24px; }
+.wp-zh {
+  font-size:1.05rem; color:var(--accent); margin-bottom:14px; line-height:1.5;
+}
+.wp-section-label {
+  font-size:0.68rem; text-transform:uppercase; letter-spacing:0.1em;
+  color:var(--text-secondary); margin:14px 0 6px;
+}
+.wp-forms {
+  display:flex; flex-wrap:wrap; gap:6px;
+}
+.wp-form-chip {
+  font-size:0.78rem; background:var(--accent-light); color:var(--accent);
+  padding:2px 10px; border-radius:10px;
+}
+.wp-meaning { margin-bottom:12px; }
+.wp-pos {
+  font-size:0.8rem; font-style:italic; color:var(--accent);
+  margin:10px 0 4px; font-weight:600;
+}
+.wp-def {
+  font-size:0.86rem; line-height:1.5; color:var(--text);
+  margin-bottom:6px; padding-left:4px;
+}
+.wp-def .def-num { color:var(--accent); font-weight:600; margin-right:6px; }
+.wp-example {
+  font-size:0.78rem; color:var(--text-secondary); font-style:italic;
+  margin:2px 0 6px 16px; line-height:1.45;
+}
+.wp-syn {
+  font-size:0.75rem; color:var(--text-secondary); margin-left:16px;
+}
+.wp-syn b { color:var(--accent); font-weight:600; }
+.wp-loading {
+  padding:30px 22px; color:var(--text-secondary); font-size:0.85rem;
+  display:flex; align-items:center; gap:8px;
+}
+.spinner {
+  display:inline-block; width:14px; height:14px; border:2px solid var(--border);
+  border-top-color:var(--accent); border-radius:50%;
+  animation:spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+.wp-not-found { padding:30px 22px; color:var(--text-secondary); font-size:0.85rem; }
+@media (max-width:640px) { .word-panel { width:88vw; } }
 .passages-list { display:none; }
 .passages-list.show { display:block; }
 .search-bar {
@@ -335,7 +402,9 @@ body {
 
 </div>
 
-<div class="word-tooltip" id="wordTooltip"></div>
+<aside class="word-panel" id="wordPanel">
+  <div id="wpContent"></div>
+</aside>
 
 <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
   <div class="modal" id="modalContent" onclick="event.stopPropagation()">
@@ -528,7 +597,6 @@ function formatSource(source) {
 }
 
 // ==================== WORD LOOKUP ====================
-let tooltipTimeout = null;
 let lookupCache = {};
 
 function stemWord(word) {
@@ -557,120 +625,139 @@ function stemWord(word) {
 
 async function lookupWord(event, word) {
   event.stopPropagation();
-  var tooltip = document.getElementById('wordTooltip');
   document.querySelectorAll('.word.active').forEach(function(w) { w.classList.remove('active'); });
   event.target.classList.add('active');
 
-  var rect = event.target.getBoundingClientRect();
-  var left = rect.left + rect.width / 2;
-  var top = rect.bottom + 8;
-  if (left + 160 > window.innerWidth) left = window.innerWidth - 170;
-  if (left < 10) left = 10;
-  if (top + 250 > window.innerHeight) top = rect.top - 250;
-
-  tooltip.style.left = left + 'px';
-  tooltip.style.top = top + 'px';
-  tooltip.style.display = 'block';
-  tooltip.innerHTML = '<div class="word-head">' + word + '</div><div class="loading">Looking up...</div>';
+  var panel = document.getElementById('wordPanel');
+  var content = document.getElementById('wpContent');
+  panel.classList.add('show');
+  content.innerHTML = '<div class="wp-loading"><div class="spinner"></div> Looking up... </div>';
 
   if (lookupCache[word]) {
-    tooltip.innerHTML = lookupCache[word];
-    resetTooltipTimer();
+    content.innerHTML = lookupCache[word];
     return;
   }
 
-  var html = '';
+  // Fetch Chinese translation + dictionary entry in parallel
+  var zhPromise = getChineseTranslation(word);
+  var dictPromise = getDictionaryEntry(word);
 
-  // Step 0: Try Immersive Translate extension (user-installed)
+  var zh = await zhPromise;
+  var dict = await dictPromise;
+
+  renderWordPanel(word, zh, dict);
+}
+
+function closeWordPanel() {
+  document.getElementById('wordPanel').classList.remove('show');
+  document.querySelectorAll('.word.active').forEach(function(w) { w.classList.remove('active'); });
+}
+
+async function getChineseTranslation(word) {
+  // Immersive Translate extension
   try {
     if (window.immersiveTranslate && typeof window.immersiveTranslate.translateText === 'function') {
       var imText = await window.immersiveTranslate.translateText(word);
-      if (imText && imText !== word) {
-        html += '<div class="word-head">' + word + '</div>';
-        html += '<div style="color:#c9975a;font-size:0.9rem;margin-top:4px;line-height:1.5;">' + imText + '</div>';
-        html += '<div style="color:var(--text-secondary);font-size:0.68rem;margin-top:4px;">Immersive Translate</div>';
-        lookupCache[word] = html;
-        tooltip.innerHTML = html;
-        resetTooltipTimer();
-        return;
-      }
+      if (imText && imText !== word) return imText;
     }
-  } catch (e) { /* fall through */ }
-
-  // Step 1: Try MyMemory for Chinese translation
+  } catch (e) {}
+  // MyMemory API
   try {
-    var mmRes = await fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(word) + '&langpair=en|zh-CN');
-    if (mmRes.ok) {
-      var mmData = await mmRes.json();
-      if (mmData.responseData && mmData.responseData.translatedText && mmData.responseData.translatedText !== word.toUpperCase()) {
-        html += '<div class="word-head">' + word + '</div>';
-        html += '<div style="color:#c9975a;font-size:0.85rem;margin-top:4px;">' + mmData.responseData.translatedText + '</div>';
-        if (mmData.matches && mmData.matches.length > 0) {
-          html += '<div style="color:var(--text-secondary);font-size:0.7rem;margin-top:4px;">MyMemory</div>';
-        }
-        lookupCache[word] = html;
-        tooltip.innerHTML = html;
-        resetTooltipTimer();
-        return;
-      }
+    var res = await fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(word) + '&langpair=en|zh-CN');
+    if (res.ok) {
+      var data = await res.json();
+      var t = data.responseData && data.responseData.translatedText;
+      if (t && t.toLowerCase() !== word.toLowerCase()) return t;
     }
-  } catch (e) { /* fall through */ }
+  } catch (e) {}
+  return '';
+}
 
-  // Step 2: Try Free Dictionary API for English definition
+async function getDictionaryEntry(word) {
   var wordsToTry = [word];
   var stemmed = stemWord(word);
   if (stemmed !== word) wordsToTry.push(stemmed);
 
-  for (var wi = 0; wi < wordsToTry.length; wi++) {
+  for (var i = 0; i < wordsToTry.length; i++) {
     try {
-      var res = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(wordsToTry[wi]));
+      var res = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(wordsToTry[i]));
       if (!res.ok) continue;
       var data = await res.json();
-      var entry = data[0];
-      html = '<div class="word-head">' + entry.word + '</div>';
-      var phonetic = entry.phonetics && entry.phonetics[0];
-      if (phonetic && phonetic.text) html += '<div class="phonetic">' + phonetic.text + '</div>';
-      else if (entry.phonetic) html += '<div class="phonetic">/' + entry.phonetic.replace(/^\//,'').replace(/\/$/,'') + '/</div>';
-
-      var count = 0;
-      for (var mi = 0; mi < entry.meanings.length; mi++) {
-        var m = entry.meanings[mi];
-        if (count >= 3) break;
-        html += '<div style="color:#c9975a;font-size:0.75rem;margin-top:4px;">' + m.partOfSpeech + '</div>';
-        for (var di = 0; di < m.definitions.length; di++) {
-          if (count >= 3) break;
-          var def = m.definitions[di];
-          // Try to get Chinese translation for this definition if available
-          html += '<div class="def"><strong>' + (count+1) + '.</strong> ' + def.definition;
-          if (def.example) html += '<br><span style="color:var(--text-secondary);font-size:0.75rem;">"' + def.example + '"</span>';
-          html += '</div>';
-          count++;
-        }
+      if (data && data.length > 0) {
+        return { entry: data[0], usedWord: wordsToTry[i], stemmed: stemmed !== word && wordsToTry[i] === stemmed };
       }
-      if (stemmed !== word && wordsToTry[wi] === stemmed) {
-        html += '<div style="color:var(--text-secondary);font-size:0.7rem;margin-top:4px;">(stemmed from "' + word + '")</div>';
-      }
-      lookupCache[word] = html;
-      tooltip.innerHTML = html;
-      resetTooltipTimer();
-      return;
-    } catch (e) { /* try next */ }
+    } catch (e) {}
   }
-
-  // Step 3: Nothing found
-  html = '<div class="word-head">' + word + '</div>';
-  html += '<div style="color:var(--text-secondary);font-size:0.8rem;">No definition found</div>';
-  lookupCache[word] = html;
-  tooltip.innerHTML = html;
-  resetTooltipTimer();
+  return null;
 }
 
-function resetTooltipTimer() {
-  clearTimeout(tooltipTimeout);
-  tooltipTimeout = setTimeout(() => {
-    document.getElementById('wordTooltip').style.display = 'none';
-    document.querySelectorAll('.word.active').forEach(w => w.classList.remove('active'));
-  }, 8000);
+function renderWordPanel(originalWord, zh, dictResult) {
+  var content = document.getElementById('wpContent');
+  var html = '';
+
+  var displayWord = dictResult && dictResult.entry ? dictResult.entry.word : originalWord;
+
+  html += '<div class="wp-header">';
+  html += '<div>';
+  html += '<div class="wp-word">' + escapeHtml(displayWord) + '</div>';
+  if (dictResult && dictResult.entry) {
+    var ph = '';
+    if (dictResult.entry.phonetic) ph = dictResult.entry.phonetic;
+    else if (dictResult.entry.phonetics && dictResult.entry.phonetics.length > 0 && dictResult.entry.phonetics[0].text) {
+      ph = dictResult.entry.phonetics[0].text;
+    }
+    if (ph) html += '<div class="wp-phonetic">' + escapeHtml(ph) + '</div>';
+  }
+  html += '</div>';
+  html += '<button class="wp-close" onclick="closeWordPanel()">&times;</button>';
+  html += '</div>';
+
+  html += '<div class="wp-body">';
+
+  // Chinese translation
+  if (zh) {
+    html += '<div class="wp-zh">' + escapeHtml(zh) + '</div>';
+  }
+
+  // Word forms (鍘熷瀷 / root)
+  var stemmedRoot = stemWord(originalWord);
+  if (stemmedRoot !== originalWord.toLowerCase() || (dictResult && dictResult.stemmed)) {
+    html += '<div class="wp-section-label">Base form</div>';
+    html += '<div class="wp-forms"><span class="wp-form-chip">' + escapeHtml(stemmedRoot) + '</span></div>';
+  }
+
+  // Dictionary definitions
+  if (dictResult && dictResult.entry) {
+    var entry = dictResult.entry;
+    var totalDefs = 0;
+    for (var mi = 0; mi < entry.meanings.length; mi++) {
+      var m = entry.meanings[mi];
+      if (totalDefs >= 8) break;
+      html += '<div class="wp-meaning">';
+      html += '<div class="wp-pos">' + escapeHtml(m.partOfSpeech) + '</div>';
+      var shownInPos = 0;
+      for (var di = 0; di < m.definitions.length && totalDefs < 8; di++) {
+        var def = m.definitions[di];
+        html += '<div class="wp-def"><span class="def-num">' + (shownInPos + 1) + '.</span>' + escapeHtml(def.definition) + '</div>';
+        if (def.example) {
+          html += '<div class="wp-example">"' + escapeHtml(def.example) + '"</div>';
+        }
+        if (def.synonyms && def.synonyms.length > 0 && shownInPos === 0) {
+          html += '<div class="wp-syn"><b>syn</b> ' + def.synonyms.slice(0, 5).map(function(s) { return escapeHtml(s); }).join(', ') + '</div>';
+        }
+        shownInPos++;
+        totalDefs++;
+      }
+      html += '</div>';
+    }
+  } else {
+    html += '<div class="wp-not-found">No definition found for "' + escapeHtml(originalWord) + '".</div>';
+  }
+
+  html += '</div>';
+
+  lookupCache[originalWord] = html;
+  content.innerHTML = html;
 }
 
 // ==================== FULL TEXT TRANSLATION ====================
@@ -786,10 +873,8 @@ function renderBilingual(passage, zhLines, enLines) {
 }
 
 document.addEventListener('click', (e) => {
-  if (!e.target.classList.contains('word')) {
-    document.getElementById('wordTooltip').style.display = 'none';
-    document.querySelectorAll('.word.active').forEach(w => w.classList.remove('active'));
-    clearTimeout(tooltipTimeout);
+  if (!e.target.classList.contains('word') && !e.target.closest('.word-panel')) {
+    closeWordPanel();
   }
 });
 
@@ -854,11 +939,14 @@ function closeModal(e) {
 function closeModalDirect() {
   document.getElementById('modalOverlay').classList.remove('show');
   document.body.style.overflow = '';
-  document.getElementById('wordTooltip').style.display = 'none';
+  closeWordPanel();
 }
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeModalDirect();
+  if (e.key === 'Escape') {
+    closeModalDirect();
+    closeWordPanel();
+  }
 });
 
 // ==================== TIMELINE ====================
