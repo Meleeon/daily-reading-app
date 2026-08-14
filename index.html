@@ -115,7 +115,7 @@ body {
   margin-bottom:12px; padding-left:14px; border-left:2px solid var(--accent-light);
 }
 .timeline {
-  position:fixed; left:max(28px, calc(50% - 590px));
+  position:fixed; left:max(20px, calc(50% - 640px));
   top:50%; transform:translateY(-50%);
   z-index:900; display:flex; flex-direction:column; align-items:flex-end;
   max-height:78vh;
@@ -150,7 +150,7 @@ body {
 }
 .timeline-row {
   position:relative; display:flex; align-items:center; justify-content:flex-end;
-  gap:12px; cursor:pointer; padding:4px 0;
+  gap:14px; cursor:pointer; padding:7px 4px;
 }
 .timeline-date-label {
   font-size:0.72rem; color:var(--text-secondary); white-space:nowrap;
@@ -862,6 +862,9 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ==================== TIMELINE ====================
+let tooltipShowDelay = null;
+let tooltipHideDelay = null;
+
 function buildDateMap() {
   // Sort articles by created_at, map each to a consecutive day ending today
   var sorted = [...DB_PASSAGES].sort(function(a, b) {
@@ -901,6 +904,7 @@ function renderTimeline() {
 }
 
 function showTimelineTooltip(rowEl, articleId) {
+  clearTimeout(tooltipHideDelay);
   var article = findPassageById(articleId);
   if (!article) return;
   var card = document.getElementById('timelineCard');
@@ -919,23 +923,27 @@ function showTimelineTooltip(rowEl, articleId) {
   }
   document.getElementById('cardTags').innerHTML = tagsHtml;
 
-  var cardWidth = Math.min(300, window.innerWidth * 0.3);
-  var cardLeft = rect.right + 18;
-  var cardTop = rect.top + rect.height / 2 - 60;
-  if (cardLeft + cardWidth > window.innerWidth) cardLeft = rect.right - cardWidth - 20;
+  var cardWidth = Math.min(280, window.innerWidth * 0.25);
+  var cardLeft = rect.right + 24;
+  var cardTop = rect.top + rect.height / 2 - 70;
+  if (cardLeft + cardWidth > window.innerWidth - 20) cardLeft = rect.right - cardWidth - 30;
   card.style.left = cardLeft + 'px';
-  card.style.top = Math.max(10, Math.min(cardTop, window.innerHeight - 160)) + 'px';
+  card.style.top = Math.max(10, Math.min(cardTop, window.innerHeight - 190)) + 'px';
 
   // Apple-style: slight delay before flip reveal
   clearTimeout(tooltipShowDelay);
   tooltipShowDelay = setTimeout(function() {
     card.classList.add('show');
-  }, 120);
+  }, 100);
 }
 
 function hideTimelineTooltip() {
   clearTimeout(tooltipShowDelay);
-  document.getElementById('timelineCard').classList.remove('show');
+  clearTimeout(tooltipHideDelay);
+  // Grace period so the flip animation can finish before hiding
+  tooltipHideDelay = setTimeout(function() {
+    document.getElementById('timelineCard').classList.remove('show');
+  }, 350);
 }
 
 // ==================== START ====================
