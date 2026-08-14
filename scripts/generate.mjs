@@ -219,8 +219,11 @@ async function getKnownUrls() {
 }
 
 // ---- Main -----------------------------------------------------------------
+// MODE=prepare : generate new article and add to library only (no export)
+// MODE=publish : retry generation if needed, then export everything to frontend
 async function main() {
-  console.log('=== Daily Reading Generator (Real Articles) ===');
+  const MODE = process.env.MODE || 'publish';
+  console.log('=== Daily Reading Pipeline (mode: ' + MODE + ') ===');
   console.log('Time: ' + new Date().toISOString());
 
   var missing = [];
@@ -284,8 +287,11 @@ async function main() {
   console.log('\nTotal new articles available: ' + allArticles.length);
 
   if (allArticles.length === 0) {
-    console.log('No new articles to process. Still exporting data files.');
-    await exportDataFiles();
+    console.log('No new articles to process.');
+    if (MODE === 'publish') {
+      console.log('Exporting existing library for publish...');
+      await exportDataFiles();
+    }
     return;
   }
 
@@ -347,20 +353,26 @@ async function main() {
     process.exit(1);
   }
 
-  console.log('\nDone! Passage #' + data.id + ' inserted.');
+  console.log('\nDone! Passage #' + data.id + ' inserted into library.');
   console.log('  Title: "' + data.title + '"');
   console.log('  URL: ' + chosen.source);
 
-  await exportDataFiles();
+  if (MODE === 'publish') {
+    console.log('\nPublish mode: exporting data files to frontend...');
+    await exportDataFiles();
+  } else {
+    console.log('\nPrepare mode: article stored in library. Will be pushed tomorrow morning.');
+  }
 }
 
 // ---- Export all data files ------------------------------------------------
 async function exportDataFiles() {
+  // Fetch the ENTIRE library - articles are never deleted
   const { data: allPassages, error: fetchErr } = await supabase
     .from('passages')
     .select('*')
     .order('created_at', { ascending: false })
-    .limit(100);
+    .limit(500);
   if (fetchErr || !allPassages || allPassages.length === 0) {
     console.error('  Export skipped: no passages found');
     return;
