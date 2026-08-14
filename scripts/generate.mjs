@@ -13,7 +13,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, readFileSync } from 'node:fs';
 
 // ---- Config ---------------------------------------------------------------
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -284,7 +284,8 @@ async function main() {
   console.log('\nTotal new articles available: ' + allArticles.length);
 
   if (allArticles.length === 0) {
-    console.log('No new articles to process. Skipping.');
+    console.log('No new articles to process. Still exporting data files.');
+    await exportDataFiles();
     return;
   }
 
@@ -350,20 +351,69 @@ async function main() {
   console.log('  Title: "' + data.title + '"');
   console.log('  URL: ' + chosen.source);
 
-  // Export all passages to JSON for offline/China fallback
+  await exportDataFiles();
+}
+
+// ---- Export all data files ------------------------------------------------
+async function exportDataFiles() {
   const { data: allPassages, error: fetchErr } = await supabase
     .from('passages')
     .select('*')
     .order('created_at', { ascending: false })
     .limit(100);
-  if (!fetchErr && allPassages) {
-    var jsonStr = JSON.stringify(allPassages, null, 2);
-    writeFileSync('passages-data.json', jsonStr);
-    // Also embed as JS file (no fetch needed by frontend)
-    var jsStr = 'window.__PASSAGES__ = ' + JSON.stringify(allPassages) + ';';
-    writeFileSync('data.js', jsStr);
-    console.log('  Exported ' + allPassages.length + ' passages to passages-data.json and data.js');
+  if (fetchErr || !allPassages || allPassages.length === 0) {
+    console.error('  Export skipped: no passages found');
+    return;
   }
+
+  // Sanitize all fields to pure ASCII
+  var clean = allPassages.map(function(p) {
+    return {
+      id: p.id,
+      title: asciify(p.title || ''),
+      en: asciify(p.en || ''),
+      source: asciify(p.source || ''),
+      tags: (p.tags || []).map(function(t) { return asciify(t); }),
+      difficulty: p.difficulty || 'advanced',
+      word_count: p.word_count || 0,
+      created_at: p.created_at,
+    };
+  });
+
+  // 1. passages-data.json
+  writeFileSync('passages-data.json', JSON.stringify(clean, null, 2));
+
+  // 2. data.js (fallback loader)
+  writeFileSync('data.js', 'window.__PASSAGES__ = ' + JSON.stringify(clean) + ';');
+
+  // 3. index.html embedded DB_PASSAGES
+  updateIndexHtml(clean);
+
+  console.log('  Exported ' + clean.length + ' passages to passages-data.json, data.js and index.html');
+}
+
+function updateIndexHtml(passages) {
+  const html = readFileSync('index.html', 'utf8');
+  const startMarker = '// __PASSAGES_START__';
+  const endMarker = '// __PASSAGES_END__';
+  const startIdx = html.indexOf(startMarker);
+  const endIdx = html.indexOf(endMarker);
+  if (startIdx === -1 || endIdx === -1 || endIdx <= startIdx) {
+    console.error('  index.html markers not found, skipping embed update');
+    return;
+  }
+
+  var rows = passages.map(function(p) {
+    return '  {\n' +
+      '    id: ' + p.id + ', title: ' + JSON.stringify(p.title) + ', created_at: ' + JSON.stringify(p.created_at) + ',\n' +
+      '    en: ' + JSON.stringify(p.en) + ',\n' +
+      '    source: ' + JSON.stringify(p.source) + ',\n' +
+      '    tags: ' + JSON.stringify(p.tags) + ', difficulty: "advanced", word_count: ' + p.word_count + '\n' +
+      '  }';
+  });
+
+  var newHtml = html.slice(0, startIdx + startMarker.length) + '\n' + rows.join(',\n') + '\n' + html.slice(endIdx);
+  writeFileSync('index.html', newHtml);
 }
 
 main();
